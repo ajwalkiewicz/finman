@@ -80,6 +80,30 @@ export const useFinanceStore = defineStore('finance', () => {
     }
   };
   
+  const updateAccount = async (id: number, account: Omit<Account, 'id' | 'created_at'>) => {
+    try {
+      const updatedAccount = await accountsAPI.update(id, account);
+      const index = accounts.value.findIndex(a => a.id === id);
+      if (index !== -1) {
+        accounts.value[index] = updatedAccount;
+      }
+      return updatedAccount;
+    } catch (error) {
+      console.error('Failed to update account:', error);
+      throw error;
+    }
+  };
+  
+  const deleteAccount = async (id: number) => {
+    try {
+      await accountsAPI.delete(id);
+      accounts.value = accounts.value.filter(a => a.id !== id);
+    } catch (error) {
+      console.error('Failed to delete account:', error);
+      throw error;
+    }
+  };
+  
   // Analytics
   const fetchAnalytics = async () => {
     try {
@@ -106,6 +130,8 @@ export const useFinanceStore = defineStore('finance', () => {
     deleteTransaction,
     fetchAccounts,
     createAccount,
+    updateAccount,
+    deleteAccount,
     fetchAnalytics
   };
 });

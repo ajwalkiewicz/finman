@@ -75,6 +75,15 @@ export const accountsAPI = {
   create: async (account: Omit<Account, 'id' | 'created_at'>): Promise<Account> => {
     const response = await api.post('/accounts/', account);
     return response.data;
+  },
+  
+  update: async (id: number, account: Omit<Account, 'id' | 'created_at'>): Promise<Account> => {
+    const response = await api.put(`/accounts/${id}`, account);
+    return response.data;
+  },
+  
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/accounts/${id}`);
   }
 };
 

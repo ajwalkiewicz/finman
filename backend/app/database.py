@@ -28,6 +28,7 @@ class Account(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     account_type = Column(String)  # bank, card, wallet, etc.
+    base_currency = Column(String, default="PLN")  # Default base currency for the account
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Transaction(Base):

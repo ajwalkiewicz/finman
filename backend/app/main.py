@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Form
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -139,6 +139,26 @@ def create_account(
     current_user: database.User = Depends(auth.get_current_user)
 ):
     return crud.create_account(db=db, account=account)
+
+@app.put("/accounts/{account_id}", response_model=schemas.Account)
+def update_account(
+    account_id: int,
+    account: schemas.AccountCreate,
+    db: Session = Depends(database.get_db),
+    current_user: database.User = Depends(auth.get_current_user)
+):
+    return crud.update_account(db=db, account_id=account_id, account=account)
+
+@app.delete("/accounts/{account_id}")
+def delete_account(
+    account_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: database.User = Depends(auth.get_current_user)
+):
+    db_account = crud.delete_account(db=db, account_id=account_id)
+    if db_account is None:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return {"message": "Account deleted successfully"}
 
 # Analytics endpoints
 @app.get("/analytics/expenses", response_model=schemas.ExpenseSummary)

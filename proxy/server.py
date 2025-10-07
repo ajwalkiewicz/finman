@@ -112,7 +112,7 @@ def get_exchange_rates():
         cached_data = redis_client.get(today_key)
         
         if cached_data:
-            logger.info("Using cached exchange rates")
+            logger.info("Using cached exchange rates from %s", today_key)
             eur_based_rates = json.loads(cached_data)
         else:
             logger.info("Fetching fresh exchange rates from Fixer API")
@@ -184,4 +184,4 @@ def clear_cache():
 if __name__ == '__main__':
     logger.info("Starting exchange rate proxy server...")
     logger.info(f"Fixer API Key: {'*' * (len(FIXER_API_KEY) - 4)}{FIXER_API_KEY[-4:]}")
-    app.run(host='0.0.0.0', port=8001, debug=False)
+    app.run(host='0.0.0.0', port=8001, debug=True)

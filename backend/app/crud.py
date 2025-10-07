@@ -87,6 +87,25 @@ def create_account(db: Session, account: schemas.AccountCreate):
     db.refresh(db_account)
     return db_account
 
+def get_account(db: Session, account_id: int):
+    return db.query(database.Account).filter(database.Account.id == account_id).first()
+
+def update_account(db: Session, account_id: int, account: schemas.AccountCreate):
+    db_account = get_account(db, account_id)
+    if db_account:
+        for key, value in account.dict().items():
+            setattr(db_account, key, value)
+        db.commit()
+        db.refresh(db_account)
+    return db_account
+
+def delete_account(db: Session, account_id: int):
+    db_account = get_account(db, account_id)
+    if db_account:
+        db.delete(db_account)
+        db.commit()
+    return db_account
+
 def get_expense_summary(db: Session, user_id: int):
     transactions = db.query(database.Transaction).filter(
         database.Transaction.owner_id == user_id

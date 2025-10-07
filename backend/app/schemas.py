@@ -39,6 +39,7 @@ class Transaction(TransactionBase):
 class AccountBase(BaseModel):
     name: str
     account_type: str
+    base_currency: str = "PLN"  # Default base currency
 
 class AccountCreate(AccountBase):
     pass

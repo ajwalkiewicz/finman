@@ -16,6 +16,7 @@ export interface Account {
   id?: number;
   name: string;
   account_type: string;
+  base_currency: string;
   created_at?: string;
 }
 
