@@ -426,11 +426,10 @@ const getAccountBadgeClass = (accountName: string | null) => {
 };
 
 const formatCurrency = (amount: number, currency: string) => {
-  return new Intl.NumberFormat('pl-PL', {
-    style: 'currency',
-    currency: currency === 'GTQ' ? 'PLN' : currency,
-    minimumFractionDigits: 2
-  }).format(amount) + (currency === 'GTQ' ? ' GTQ' : '');
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount) + ' ' + currency;
 };
 
 const resetForm = () => {
