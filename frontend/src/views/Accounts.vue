@@ -45,7 +45,7 @@
         <!-- Account List -->
         <div class="bg-white shadow overflow-hidden sm:rounded-md mb-8">
           <ul class="divide-y divide-gray-200">
-            <li v-for="account in financeStore.accounts" :key="account.id" class="px-4 py-4 sm:px-6">
+            <li v-for="account in filteredAccounts" :key="account.id" class="px-4 py-4 sm:px-6">
               <div class="flex items-center justify-between">
                 <div class="flex items-center">
                   <div class="flex-shrink-0">
@@ -68,19 +68,19 @@
             </li>
           </ul>
           
-          <div v-if="financeStore.accounts.length === 0" class="text-center py-12">
+          <div v-if="filteredAccounts.length === 0" class="text-center py-12">
             <p class="text-gray-500">No accounts found. Add your first account to get started.</p>
           </div>
         </div>
 
         <!-- Account Flow Summary -->
-        <div v-if="Object.keys(financeStore.accountFlow).length > 0" class="bg-white shadow sm:rounded-lg">
+        <div v-if="Object.keys(filteredAccountFlow).length > 0" class="bg-white shadow sm:rounded-lg">
           <div class="px-4 py-5 sm:p-6">
             <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Money Flow Between Accounts</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div
-                v-for="(flow, accountName) in financeStore.accountFlow"
+                v-for="(flow, accountName) in filteredAccountFlow"
                 :key="accountName"
                 class="border border-gray-200 rounded-lg p-4"
               >
@@ -167,7 +167,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useFinanceStore } from '@/stores/finance';
 
@@ -180,6 +180,24 @@ const submitting = ref(false);
 const form = reactive({
   name: '',
   account_type: 'bank'
+});
+
+// Filter out Income and Expense accounts (internal calculation accounts)
+const filteredAccounts = computed(() => {
+  return financeStore.accounts.filter(account => 
+    account.name !== 'Income' && account.name !== 'Expense'
+  );
+});
+
+// Filter out Income and Expense from account flow
+const filteredAccountFlow = computed(() => {
+  const filtered: Record<string, any> = {};
+  for (const [accountName, flow] of Object.entries(financeStore.accountFlow)) {
+    if (accountName !== 'Income' && accountName !== 'Expense') {
+      filtered[accountName] = flow;
+    }
+  }
+  return filtered;
 });
 
 const formatCurrency = (amount: number) => {
