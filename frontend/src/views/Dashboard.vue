@@ -36,11 +36,11 @@
         <div v-if="financeStore.expenseSummary" class="mb-6">
           <!-- Base Currency Selection -->
           <div class="mb-4 flex items-center space-x-4">
-            <label for="dashboard-base-currency" class="text-sm font-medium text-gray-700">Display in:</label>
+            <label for="dashboard-base-currency" class="text-sm font-medium text-gray-700">Base currency:</label>
             <select 
               id="dashboard-base-currency"
               v-model="baseCurrency" 
-              @change="fetchExchangeRates"
+              @change="handleCurrencyChange"
               class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="PLN">PLN</option>
@@ -122,7 +122,11 @@
           <!-- Second Row: Currency-specific Expenses -->
           <div v-if="financeStore.expenseSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <!-- PLN Expenses -->
-            <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div 
+              class="bg-white overflow-hidden shadow rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md"
+              :class="{ 'ring-2 ring-blue-500 bg-blue-50': baseCurrency === 'PLN' }"
+              @click="setBaseCurrency('PLN')"
+            >
               <div class="p-5">
                 <div class="flex items-center">
                   <div class="flex-shrink-0">
@@ -143,7 +147,11 @@
             </div>
 
             <!-- EUR Expenses -->
-            <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div 
+              class="bg-white overflow-hidden shadow rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md"
+              :class="{ 'ring-2 ring-purple-500 bg-purple-50': baseCurrency === 'EUR' }"
+              @click="setBaseCurrency('EUR')"
+            >
               <div class="p-5">
                 <div class="flex items-center">
                   <div class="flex-shrink-0">
@@ -164,7 +172,11 @@
             </div>
 
             <!-- USD Expenses -->
-            <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div 
+              class="bg-white overflow-hidden shadow rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md"
+              :class="{ 'ring-2 ring-green-500 bg-green-50': baseCurrency === 'USD' }"
+              @click="setBaseCurrency('USD')"
+            >
               <div class="p-5">
                 <div class="flex items-center">
                   <div class="flex-shrink-0">
@@ -185,7 +197,11 @@
             </div>
 
             <!-- GTQ Expenses -->
-            <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div 
+              class="bg-white overflow-hidden shadow rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md"
+              :class="{ 'ring-2 ring-orange-500 bg-orange-50': baseCurrency === 'GTQ' }"
+              @click="setBaseCurrency('GTQ')"
+            >
               <div class="p-5">
                 <div class="flex items-center">
                   <div class="flex-shrink-0">
@@ -371,8 +387,8 @@ const financeStore = useFinanceStore();
 const sortBy = ref<string>('day');
 const sortDirection = ref<'asc' | 'desc'>('asc');
 
-// Exchange rate state
-const baseCurrency = ref<string>('PLN');
+// Exchange rate state with localStorage persistence
+const baseCurrency = ref<string>(localStorage.getItem('baseCurrency') || 'PLN');
 const exchangeRates = ref<ExchangeRateResponse | null>(null);
 const isLoadingRates = ref<boolean>(false);
 
@@ -454,6 +470,17 @@ const fetchExchangeRates = async () => {
   } finally {
     isLoadingRates.value = false;
   }
+};
+
+const handleCurrencyChange = async () => {
+  localStorage.setItem('baseCurrency', baseCurrency.value);
+  await fetchExchangeRates();
+};
+
+const setBaseCurrency = async (currency: string) => {
+  baseCurrency.value = currency;
+  localStorage.setItem('baseCurrency', currency);
+  await fetchExchangeRates();
 };
 
 // Utility functions

@@ -43,7 +43,7 @@
               <select 
                 id="base-currency"
                 v-model="baseCurrency" 
-                @change="fetchExchangeRates"
+                @change="handleCurrencyChange"
                 class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="PLN">PLN</option>
@@ -157,7 +157,7 @@
                   <dl>
                     <dt class="text-sm font-medium text-gray-500 truncate">GTQ Expenses</dt>
                     <dd class="text-lg font-medium text-gray-900">
-                      {{ (financeStore.expenseSummary.total_expense_gtq).toLocaleString() }} GTQ
+                      {{ formatCurrency(financeStore.expenseSummary.total_expense_gtq, 'GTQ') }}
                     </dd>
                   </dl>
                 </div>
@@ -262,8 +262,8 @@ import type { ExchangeRatesResponse } from '@/types';
 const authStore = useAuthStore();
 const financeStore = useFinanceStore();
 
-// Exchange rates state
-const baseCurrency = ref<string>('PLN');
+// Exchange rates state with localStorage persistence
+const baseCurrency = ref<string>(localStorage.getItem('baseCurrency') || 'PLN');
 const exchangeRates = ref<ExchangeRatesResponse | null>(null);
 
 const sortedCategories = computed(() => {
@@ -295,8 +295,14 @@ const fetchExchangeRates = async () => {
   }
 };
 
+const handleCurrencyChange = async () => {
+  localStorage.setItem('baseCurrency', baseCurrency.value);
+  await fetchExchangeRates();
+};
+
 const setBaseCurrency = async (currency: string) => {
   baseCurrency.value = currency;
+  localStorage.setItem('baseCurrency', currency);
   await fetchExchangeRates();
 };
 
@@ -311,11 +317,10 @@ const getCurrencyColor = (currency: string) => {
 };
 
 const formatCurrency = (amount: number, currency: string) => {
-  return new Intl.NumberFormat('pl-PL', {
-    style: 'currency',
-    currency: currency === 'GTQ' ? 'PLN' : currency,
-    minimumFractionDigits: 2
-  }).format(amount) + (currency === 'GTQ' ? ' GTQ' : '');
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount) + ' ' + currency;
 };
 
 const formatTimestamp = (timestamp: number) => {
