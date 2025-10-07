@@ -44,46 +44,141 @@
 
         <!-- Transaction List -->
         <div class="bg-white shadow overflow-hidden sm:rounded-md">
-          <ul class="divide-y divide-gray-200">
-            <li v-for="transaction in financeStore.transactions" :key="transaction.id" class="px-4 py-4 sm:px-6">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0">
-                    <div class="w-3 h-3 rounded-full" :class="transaction.is_expense ? 'bg-red-400' : 'bg-green-400'"></div>
-                  </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">{{ transaction.title }}</div>
-                    <div class="text-sm text-gray-500">{{ transaction.description }}</div>
-                    <div class="text-xs text-gray-400">
-                      {{ transaction.origin_account || 'No source' }} → {{ transaction.destination_account || 'Expense' }}
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-4">
-                  <div class="text-right">
-                    <div class="text-sm font-medium text-gray-900">
-                      {{ formatCurrency(transaction.amount, transaction.currency) }}
-                    </div>
-                    <div class="text-sm text-gray-500">Day {{ transaction.day_of_month }}</div>
-                  </div>
-                  <div class="flex space-x-2">
-                    <button
-                      @click="editTransaction(transaction)"
-                      class="text-indigo-600 hover:text-indigo-900 text-sm"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      @click="deleteTransaction(transaction.id!)"
-                      class="text-red-600 hover:text-red-900 text-sm"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
+          <div class="px-4 py-5 sm:px-6">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900">All Transactions</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Manage your household transactions</p>
               </div>
-            </li>
-          </ul>
+              <div class="flex items-center space-x-2">
+                <label for="sort-select" class="text-sm font-medium text-gray-700">Sort by:</label>
+                <select 
+                  id="sort-select"
+                  v-model="sortBy" 
+                  @change="updateSort"
+                  class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="day">Day</option>
+                  <option value="title">Transaction Name</option>
+                  <option value="origin_account">From Account</option>
+                  <option value="destination_account">To Account</option>
+                  <option value="amount">Amount</option>
+                </select>
+                <button 
+                  @click="toggleSortDirection"
+                  class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  :title="sortDirection === 'asc' ? 'Sort ascending' : 'Sort descending'"
+                >
+                  <svg class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('title')">
+                    <div class="flex items-center space-x-1">
+                      <span>Transaction</span>
+                      <svg v-if="sortBy === 'title'" class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                      </svg>
+                    </div>
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('origin_account')">
+                    <div class="flex items-center space-x-1">
+                      <span>From Account</span>
+                      <svg v-if="sortBy === 'origin_account'" class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                      </svg>
+                    </div>
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('destination_account')">
+                    <div class="flex items-center space-x-1">
+                      <span>To Account</span>
+                      <svg v-if="sortBy === 'destination_account'" class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                      </svg>
+                    </div>
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('amount')">
+                    <div class="flex items-center space-x-1">
+                      <span>Amount</span>
+                      <svg v-if="sortBy === 'amount'" class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                      </svg>
+                    </div>
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('day')">
+                    <div class="flex items-center space-x-1">
+                      <span>Day</span>
+                      <svg v-if="sortBy === 'day'" class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                      </svg>
+                    </div>
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr v-for="transaction in sortedTransactions" :key="transaction.id" class="hover:bg-gray-50">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div class="flex-shrink-0">
+                        <div class="w-3 h-3 rounded-full" :class="getTransactionTypeColor(transaction)"></div>
+                      </div>
+                      <div class="ml-4">
+                        <div class="text-sm font-medium text-gray-900">{{ transaction.title }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="getAccountBadgeClass(transaction.origin_account)">
+                      {{ transaction.origin_account || '-' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="getAccountBadgeClass(transaction.destination_account)">
+                      {{ transaction.destination_account || '-' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {{ formatCurrency(transaction.amount, transaction.currency) }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ transaction.day_of_month }}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-500">
+                    {{ transaction.description }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div class="flex space-x-2">
+                      <button
+                        @click="editTransaction(transaction)"
+                        class="text-indigo-600 hover:text-indigo-900"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        @click="deleteTransaction(transaction.id!)"
+                        class="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           
           <div v-if="financeStore.transactions.length === 0" class="text-center py-12">
             <p class="text-gray-500">No transactions found. Add your first transaction to get started.</p>
@@ -210,7 +305,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useFinanceStore } from '@/stores/finance';
 import type { Transaction } from '@/types';
@@ -222,6 +317,10 @@ const showModal = ref(false);
 const editingTransaction = ref<Transaction | null>(null);
 const submitting = ref(false);
 
+// Sorting state
+const sortBy = ref<string>('day');
+const sortDirection = ref<'asc' | 'desc'>('asc');
+
 const form = reactive({
   title: '',
   origin_account: null as string | null,
@@ -231,6 +330,100 @@ const form = reactive({
   day_of_month: 1,
   description: ''
 });
+
+// Sorted transactions computed property
+const sortedTransactions = computed(() => {
+  const transactions = [...financeStore.transactions];
+  
+  transactions.sort((a: Transaction, b: Transaction) => {
+    let aValue: any;
+    let bValue: any;
+    
+    switch (sortBy.value) {
+      case 'title':
+        aValue = a.title?.toLowerCase() || '';
+        bValue = b.title?.toLowerCase() || '';
+        break;
+      case 'origin_account':
+        aValue = a.origin_account?.toLowerCase() || '';
+        bValue = b.origin_account?.toLowerCase() || '';
+        break;
+      case 'destination_account':
+        aValue = a.destination_account?.toLowerCase() || '';
+        bValue = b.destination_account?.toLowerCase() || '';
+        break;
+      case 'amount':
+        aValue = a.amount || 0;
+        bValue = b.amount || 0;
+        break;
+      case 'day':
+      default:
+        aValue = a.day_of_month || 0;
+        bValue = b.day_of_month || 0;
+        break;
+    }
+    
+    if (sortDirection.value === 'asc') {
+      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+    } else {
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    }
+  });
+  
+  return transactions;
+});
+
+// Sorting methods
+const setSortBy = (field: string) => {
+  if (sortBy.value === field) {
+    toggleSortDirection();
+  } else {
+    sortBy.value = field;
+    sortDirection.value = 'asc';
+  }
+};
+
+const toggleSortDirection = () => {
+  sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+};
+
+const updateSort = () => {
+  // This is called when the select dropdown changes
+  // The sortBy value is already updated by v-model
+  sortDirection.value = 'asc';
+};
+
+const getTransactionTypeColor = (transaction: any) => {
+  if (transaction.origin_account === 'Income') {
+    return 'bg-green-400'; // Income
+  } else if (transaction.destination_account === 'Expense') {
+    return 'bg-red-400'; // Expense
+  } else {
+    return 'bg-blue-400'; // Transfer
+  }
+};
+
+const getAccountBadgeClass = (accountName: string | null) => {
+  if (!accountName) return 'bg-gray-100 text-gray-800';
+  
+  switch (accountName) {
+    case 'Income':
+      return 'bg-green-100 text-green-800';
+    case 'Expense':
+      return 'bg-red-100 text-red-800';
+    case 'Millenium':
+      return 'bg-blue-100 text-blue-800';
+    case 'Santander':
+      return 'bg-purple-100 text-purple-800';
+    case 'Revolut Adam':
+    case 'Revolut Together':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'Portu':
+      return 'bg-indigo-100 text-indigo-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
 
 const formatCurrency = (amount: number, currency: string) => {
   return new Intl.NumberFormat('pl-PL', {
