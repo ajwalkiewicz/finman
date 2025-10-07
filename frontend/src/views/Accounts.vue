@@ -543,19 +543,44 @@ const accountFlowsConverted = computed(() => {
   const converted: Record<string, any> = {};
   
   filteredAccounts.value.forEach(account => {
-    const flow = financeStore.accountFlow[account.name];
-    if (!flow) return;
-    
     const baseCurrency = account.base_currency || 'PLN';
+    let incoming = 0;
+    let outgoing = 0;
     
-    // For now, we'll assume the backend flow is in PLN and convert to account's base currency
-    const convertedIncoming = convertAmount(flow.incoming, 'PLN', baseCurrency);
-    const convertedOutgoing = convertAmount(flow.outgoing, 'PLN', baseCurrency);
+    // Calculate flows from individual transactions, converting each to the account's base currency
+    financeStore.transactions.forEach(transaction => {
+      // Skip transactions without proper data
+      if (!transaction.currency || typeof transaction.amount !== 'number') {
+        return;
+      }
+      
+      const transactionCurrency = transaction.currency;
+      const transactionAmount = transaction.amount;
+      
+      // Convert transaction amount to account's base currency
+      const convertedAmount = convertAmount(transactionAmount, transactionCurrency, baseCurrency);
+      
+      // Debug logging for currency conversion
+      if (transactionCurrency !== baseCurrency && (transaction.destination_account === account.name || transaction.origin_account === account.name)) {
+        console.log(`Converting ${transactionAmount} ${transactionCurrency} to ${convertedAmount.toFixed(2)} ${baseCurrency} for account ${account.name}`);
+      }
+      
+      // Check if this transaction affects this account
+      if (transaction.destination_account === account.name) {
+        // Money coming into this account
+        incoming += convertedAmount;
+      }
+      
+      if (transaction.origin_account === account.name) {
+        // Money going out of this account
+        outgoing += convertedAmount;
+      }
+    });
     
     converted[account.name] = {
-      incoming: convertedIncoming,
-      outgoing: convertedOutgoing,
-      net: convertedIncoming - convertedOutgoing,
+      incoming: Math.round(incoming * 100) / 100, // Round to 2 decimal places
+      outgoing: Math.round(outgoing * 100) / 100,
+      net: Math.round((incoming - outgoing) * 100) / 100,
       currency: baseCurrency
     };
   });
@@ -624,6 +649,10 @@ const handleSubmit = async () => {
   submitting.value = true;
   try {
     await financeStore.createAccount(form);
+    
+    // Refetch transactions to recalculate flows for the new account
+    await financeStore.fetchTransactions();
+    
     closeModal();
   } catch (error) {
     console.error('Failed to create account:', error);
@@ -655,11 +684,12 @@ const updateAccountCurrency = async (newCurrency: string) => {
     
     await accountsAPI.update(selectedAccount.value.id, updatedAccount);
     
-    // Update the local store
-    await financeStore.fetchAccounts();
-    
-    // Refetch exchange rates and recalculate flows
-    await fetchExchangeRates();
+    // Update the local store and refetch data
+    await Promise.all([
+      financeStore.fetchAccounts(),
+      financeStore.fetchTransactions(),
+      fetchExchangeRates()
+    ]);
     
     closeCurrencyModal();
   } catch (error) {
@@ -692,8 +722,9 @@ const handleEditSubmit = async () => {
   try {
     await financeStore.updateAccount(selectedAccount.value.id, editForm);
     
-    // Refetch analytics and exchange rates
+    // Refetch all data including transactions and exchange rates
     await Promise.all([
+      financeStore.fetchTransactions(),
       financeStore.fetchAnalytics(),
       fetchExchangeRates()
     ]);
@@ -723,8 +754,11 @@ const handleDelete = async () => {
   try {
     await financeStore.deleteAccount(selectedAccount.value.id);
     
-    // Refetch analytics after deletion
-    await financeStore.fetchAnalytics();
+    // Refetch analytics and transactions after deletion
+    await Promise.all([
+      financeStore.fetchTransactions(),
+      financeStore.fetchAnalytics()
+    ]);
     
     closeDeleteModal();
   } catch (error) {
@@ -737,6 +771,7 @@ const handleDelete = async () => {
 onMounted(async () => {
   await Promise.all([
     financeStore.fetchAccounts(),
+    financeStore.fetchTransactions(),
     financeStore.fetchAnalytics(),
     fetchExchangeRates()
   ]);
