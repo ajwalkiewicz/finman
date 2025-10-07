@@ -53,7 +53,8 @@
             </span>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <!-- First Row: Main Summary Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
             <!-- Total Income -->
             <div class="bg-white overflow-hidden shadow rounded-lg">
               <div class="p-5">
@@ -116,27 +117,93 @@
                 </div>
               </div>
             </div>
+          </div>
 
-          <!-- GTQ Expenses -->
-          <div v-if="financeStore.expenseSummary" class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                    <span class="text-white text-sm font-semibold">GTQ</span>
+          <!-- Second Row: Currency-specific Expenses -->
+          <div v-if="financeStore.expenseSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- PLN Expenses -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+              <div class="p-5">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span class="text-white text-sm font-semibold">PLN</span>
+                    </div>
                   </div>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">GTQ Expenses</dt>
-                    <dd class="text-lg font-medium text-gray-900">
-                      {{ (financeStore.expenseSummary.total_expense_gtq).toLocaleString() }} GTQ
-                    </dd>
-                  </dl>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt class="text-sm font-medium text-gray-500 truncate">PLN Expenses</dt>
+                      <dd class="text-lg font-medium text-gray-900">
+                        {{ formatCurrency(financeStore.expenseSummary.total_expense_pln, 'PLN') }}
+                      </dd>
+                    </dl>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+
+            <!-- EUR Expenses -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+              <div class="p-5">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                      <span class="text-white text-sm font-semibold">EUR</span>
+                    </div>
+                  </div>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt class="text-sm font-medium text-gray-500 truncate">EUR Expenses</dt>
+                      <dd class="text-lg font-medium text-gray-900">
+                        {{ formatCurrency(financeStore.expenseSummary.total_expense_eur, 'EUR') }}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- USD Expenses -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+              <div class="p-5">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                      <span class="text-white text-sm font-semibold">USD</span>
+                    </div>
+                  </div>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt class="text-sm font-medium text-gray-500 truncate">USD Expenses</dt>
+                      <dd class="text-lg font-medium text-gray-900">
+                        {{ formatCurrency(financeStore.expenseSummary.total_expense_usd, 'USD') }}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- GTQ Expenses -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+              <div class="p-5">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                      <span class="text-white text-sm font-semibold">GTQ</span>
+                    </div>
+                  </div>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt class="text-sm font-medium text-gray-500 truncate">GTQ Expenses</dt>
+                      <dd class="text-lg font-medium text-gray-900">
+                        {{ formatCurrency(financeStore.expenseSummary.total_expense_gtq, 'GTQ') }}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
