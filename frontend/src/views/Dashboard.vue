@@ -377,7 +377,7 @@ import type { Transaction } from '@/types';
 interface ExchangeRateResponse {
   rates: Record<string, number>;
   base: string;
-  timestamp: string;
+  timestamp: number;
 }
 
 const authStore = useAuthStore();
@@ -484,15 +484,15 @@ const setBaseCurrency = async (currency: string) => {
 };
 
 // Utility functions
-const formatTimestamp = (timestamp: string): string => {
-  const date = new Date(timestamp);
+const formatTimestamp = (timestamp: number): string => {
+  const date = new Date(timestamp * 1000);
   return date.toLocaleString('en-US', {
     year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+    month: 'long',
+    day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    timeZoneName: 'short'
+    timeZone: 'UTC'
   });
 };
 

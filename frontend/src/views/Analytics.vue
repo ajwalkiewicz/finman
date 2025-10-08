@@ -325,13 +325,13 @@ const formatCurrency = (amount: number, currency: string) => {
 
 const formatTimestamp = (timestamp: number) => {
   const date = new Date(timestamp * 1000);
-  return date.toLocaleString('pl-PL', {
+  return date.toLocaleString('en-US', {
     year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+    month: 'long',
+    day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    timeZoneName: 'short'
+    timeZone: 'UTC'
   });
 };
 
