@@ -204,3 +204,4 @@ yarn-error.log
 # Project-specific ignores
 data.csv
 *.db
+*.db.bak

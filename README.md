@@ -186,6 +186,27 @@ The frontend is built with Vue 3 and TypeScript, using:
 - CORS configuration for cross-origin requests
 - Input validation with Pydantic schemas
 
+## TODO:
+
+Short term goals
+1. Ensure security of an application
+   1. Disable creating new accounts
+   2. Use OAuth2 
+2. Create an easy way to publish the app on VPS
+3. Create a backup mechanism
+4. Fix analytics page
+
+Long term
+1. Repay technological debt
+2. Show money flow graph for each account
+3. Import transactions from CSV
+4. Export transactions to CSV
+5. Add graph with money flow and transactions
+6. Use better database than sqlite
+
+Nice to have:
+1. Spectator mode where the numbers and names of transactions and accounts are blurred
+
 ## License
 
-This project is for personal use and learning purposes.
+TODO: add license

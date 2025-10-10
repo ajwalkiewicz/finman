@@ -54,6 +54,8 @@ load_dotenv()
 FIXER_API_KEY = os.getenv("FIXER_API_KEY")
 PRODUCTION = os.getenv("PRODUCTION", "false").lower() == "true"
 ALLOW_ORIGINS = os.getenv("ALLOW_ORIGINS", "")
+REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
 if not FIXER_API_KEY:
     logger.error("FIXER_API_KEY not found in env file")
@@ -87,7 +89,7 @@ app.add_middleware(
 
 # Redis setup
 try:
-    redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+    redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
     redis_client.ping()
     logger.info("Connected to Redis")
 except redis.ConnectionError:
@@ -142,9 +144,11 @@ def fetch_from_fixer_api() -> FixerAPIResponseSuccess:
     try:
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
-        data = cast(FixerAPIBaseModel, response.json())
+        
+        data = response.json()
+        logger.info("Data fetched from Fixer API: %s", data)
 
-        if not data.success:
+        if not data.get('success', False):
             data = FixerAPIResponseError.model_validate(data)
             raise Exception(f"Fixer API error: {data.error}")
         
@@ -206,4 +210,6 @@ if __name__ == '__main__':
     logger.info("Starting exchange rate proxy server...")
     logger.info(f"Fixer API Key: {'*' * (len(FIXER_API_KEY) - 4)}{FIXER_API_KEY[-4:]}")
     
-    uvicorn.run(app, host='127.0.0.1', port=8001, log_level="info")
+    # Use 0.0.0.0 to accept connections from outside the container
+    host = '0.0.0.0' if PRODUCTION or os.getenv('DOCKER_ENV') else '127.0.0.1'
+    uvicorn.run(app, host=host, port=8012, log_level="info")

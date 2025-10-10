@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { Transaction, Account, User, ExpenseSummary, AccountFlow, AuthResponse, ExchangeRatesResponse } from '@/types';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -103,7 +103,7 @@ export const analyticsAPI = {
 // Exchange Rates API
 export const exchangeRatesAPI = {
   getRates: async (baseCurrency: string = 'PLN'): Promise<ExchangeRatesResponse> => {
-    const response = await axios.get(`http://localhost:8001/api/rates?base=${baseCurrency}`);
+    const response = await axios.get(`/exchange/rates?base=${baseCurrency}`);
     return response.data;
   }
 };

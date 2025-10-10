@@ -416,14 +416,14 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useFinanceStore } from '@/stores/finance';
+import { exchangeRatesAPI } from '@/services/api';
 import { accountsAPI } from '@/services/api';
-import type { Account } from '@/types';
+import type { Account, ExchangeRatesResponse } from '@/types';
 
-interface ExchangeRateResponse {
-  rates: Record<string, number>;
-  base: string;
-  timestamp: string;
-}
+
+// Exchange rates state with localStorage persistence
+const baseCurrency = ref<string>(localStorage.getItem('baseCurrency') || 'PLN');
+const exchangeRates = ref<ExchangeRatesResponse | null>(null);
 
 const authStore = useAuthStore();
 const financeStore = useFinanceStore();
@@ -437,7 +437,6 @@ const currencySubmitting = ref(false);
 const submitting = ref(false);
 const editSubmitting = ref(false);
 const deleteSubmitting = ref(false);
-const exchangeRates = ref<ExchangeRateResponse | null>(null);
 
 // Sorting state
 const sortBy = ref<string>('name');
@@ -513,13 +512,10 @@ const sortedAccounts = computed(() => {
 // Exchange rate functions
 const fetchExchangeRates = async () => {
   try {
-    const response = await fetch(`http://localhost:8001/api/rates?base=PLN`);
-    if (response.ok) {
-      const data = await response.json();
-      exchangeRates.value = data;
-    }
+    const rates = await exchangeRatesAPI.getRates(baseCurrency.value);
+    exchangeRates.value = rates;
   } catch (error) {
-    console.error('Error fetching exchange rates:', error);
+    console.error('Failed to fetch exchange rates:', error);
   }
 };
 

@@ -16,7 +16,12 @@ app = FastAPI(title="Finance Manager API", version="1.0.0")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8080"],
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://localhost:8080",
+        "https://finman.walkiewicz.io",
+        "http://finman.walkiewicz.io"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,0 +1,73 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8010:8000"  # Fixed: backend runs on port 8000 internally
+    volumes:
+      - ./data:/app/data
+    networks:
+      - dev-net
+    environment:
+      - ENVIRONMENT=development
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/docs')"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"  # Fixed: frontend nginx runs on port 80 internally
+    networks:
+      - dev-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - dev-net
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  proxy:
+    build: ./proxy
+    ports:
+      - "8012:8012"
+    environment:
+      - REDIS_HOST=redis  # Fixed: use service name instead of localhost
+      - REDIS_PORT=6379
+      - FIXER_API_KEY=${FIXER_API_KEY}
+      - PRODUCTION=false  # Changed to false for development
+      - ALLOW_ORIGINS=*
+      - DOCKER_ENV=true  # Added to indicate running in Docker
+    depends_on:
+      - redis
+    networks:
+      - dev-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8012/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  dev-net:
+    driver: bridge
+
+volumes:
+  redis_data:
