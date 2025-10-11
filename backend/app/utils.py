@@ -87,21 +87,6 @@ def import_csv_data(db: Session, csv_file_path: str, user_id: int):
     print(f"Successfully imported data from {csv_file_path}")
 
 
-def setup_initial_data(db: Session):
-    """Set up initial data including a default user and their Income/Expense accounts"""
-    # Create default user if not exists
-    user = crud.get_user_by_username(db, "admin")
-    if not user:
-        user_create = schemas.UserCreate(username="admin", password="admin123")
-        user = crud.create_user(db, user_create)
-        print("Created default admin user")
-
-        # Create Income and Expense accounts for the new user
-        create_user_income_expense_accounts(db, user.id)
-
-    return user
-
-
 def create_user_income_expense_accounts(db: Session, user_id: int):
     """Create Income and Expense accounts for a specific user"""
     existing_accounts = crud.get_accounts(db, user_id)

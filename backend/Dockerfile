@@ -28,9 +28,9 @@ RUN mkdir -p /app/data \
     && chmod 755 /app/data
 
 # Create a non-root user for security
-# RUN adduser --disabled-password --gecos '' --shell /bin/bash appuser \
-#     && chown -R appuser:appuser /app
-# USER appuser
+RUN adduser --disabled-password --gecos '' --shell /bin/bash appuser \
+    && chown -R appuser:appuser /app
+USER appuser
 
 # Expose the port the app runs on
 EXPOSE 8010

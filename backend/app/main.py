@@ -7,12 +7,28 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from . import auth, crud, database, schemas, utils
+from . import auth, crud, database, schemas
 
-# Create database tables
-database.create_tables()
 
-app = FastAPI(title="Finance Manager API", version="1.0.0")
+# Lifespan event to create database and tables
+# This function runs when the application starts and before it shuts down.
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    logging.info("Starting up and setting up the database...")
+    # Create database tables
+    database.create_tables()
+    database.setup_database()
+    yield
+
+
+app = FastAPI(
+    title="Finance Manager API",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url=None,  # Disables Swagger UI at /docs
+    redoc_url=None,  # Disables ReDoc at /redoc
+    openapi_url=None,  # Disables OpenAPI JSON at /openapi.json
+)
 
 # Configure CORS
 app.add_middleware(
@@ -26,23 +42,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# Lifespan event to create database and tables
-# This function runs when the application starts and before it shuts down.
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    logging.info("Starting up and setting up the database...")
-    database.setup_database()
-
-    # Setup initial data (create admin user)
-    db = next(database.get_session())
-    try:
-        utils.setup_initial_data(db)
-    finally:
-        db.close()
-
-    yield
 
 
 # Authentication endpoints

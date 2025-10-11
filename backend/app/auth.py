@@ -1,4 +1,3 @@
-import logging
 import os
 from datetime import datetime, timedelta, timezone
 
@@ -16,11 +15,15 @@ from .crud import get_user_by_username
 from .database import User, get_session
 
 # Security configuration
-load_dotenv(".env")
+load_dotenv("/app/data/.env")
 
-_SECRET_KEY = "your-secret-key-change-this-in-production"
 _ALGORITHM = "HS256"
 _ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+SECRET_KEY = os.getenv("SECRET_KEY", None)
+if SECRET_KEY is None or len(SECRET_KEY) < 32:
+    raise ValueError("SECRET_KEY must be set and at least 32 characters long")
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -33,15 +36,12 @@ class Secret(BaseModel):
 
 
 secret = Secret(
-    key=os.getenv("SECRET_KEY", _SECRET_KEY),
+    key=SECRET_KEY,
     algorithm=os.getenv("ALGORITHM", _ALGORITHM),
     access_token_expire_minutes=int(
         os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", _ACCESS_TOKEN_EXPIRE_MINUTES)
     ),
 )
-
-if secret.key == _SECRET_KEY:
-    logging.critical("Application is using the default secret key")
 
 
 class Token(BaseModel):
