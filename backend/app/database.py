@@ -31,18 +31,23 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     transactions = relationship("Transaction", back_populates="owner")
+    accounts = relationship("Account", back_populates="owner")
 
 
 class Account(Base):
     __tablename__ = "accounts"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
+    name = Column(String, index=True)
     account_type = Column(String)  # bank, card, wallet, etc.
     base_currency = Column(
         String, default="PLN"
     )  # Default base currency for the account
+    label_color = Column(String, default="#3B82F6")  # Default blue color
+    owner_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    owner = relationship("User", back_populates="accounts")
 
 
 class Transaction(Base):

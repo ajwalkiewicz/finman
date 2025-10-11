@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from . import auth, crud, database, schemas
+from . import auth, crud, database, schemas, utils
 
 # Create database tables
 database.create_tables()
@@ -19,9 +19,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "http://localhost:8080",
-        "https://finman.walkiewicz.io",
         "http://finman.walkiewicz.io",
+        "https://finman.walkiewicz.io",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -35,6 +34,14 @@ app.add_middleware(
 async def lifespan(_: FastAPI):
     logging.info("Starting up and setting up the database...")
     database.setup_database()
+
+    # Setup initial data (create admin user)
+    db = next(database.get_session())
+    try:
+        utils.setup_initial_data(db)
+    finally:
+        db.close()
+
     yield
 
 
@@ -145,8 +152,11 @@ def delete_transaction(
 
 # Account endpoints
 @app.get("/accounts/", response_model=list[schemas.Account])
-def read_accounts(db: Session = Depends(database.get_session)):
-    return crud.get_accounts(db)
+def read_accounts(
+    db: Session = Depends(database.get_session),
+    current_user: database.User = Depends(auth.get_current_user),
+):
+    return crud.get_accounts(db, user_id=current_user.id)
 
 
 @app.post("/accounts/", response_model=schemas.Account)
@@ -155,7 +165,7 @@ def create_account(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
-    return crud.create_account(db=db, account=account)
+    return crud.create_account(db=db, account=account, user_id=current_user.id)
 
 
 @app.put("/accounts/{account_id}", response_model=schemas.Account)
@@ -165,7 +175,12 @@ def update_account(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
-    return crud.update_account(db=db, account_id=account_id, account=account)
+    db_account = crud.update_account(
+        db=db, account_id=account_id, account=account, user_id=current_user.id
+    )
+    if db_account is None:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return db_account
 
 
 @app.delete("/accounts/{account_id}")
@@ -174,7 +189,9 @@ def delete_account(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
-    db_account = crud.delete_account(db=db, account_id=account_id)
+    db_account = crud.delete_account(
+        db=db, account_id=account_id, user_id=current_user.id
+    )
     if db_account is None:
         raise HTTPException(status_code=404, detail="Account not found")
     return {"message": "Account deleted successfully"}
