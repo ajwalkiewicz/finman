@@ -645,11 +645,33 @@ const handleFileUpload = (event: Event) => {
   }
 };
 
+const parseCSVLine = (line: string): string[] => {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  result.push(current.trim());
+  return result;
+};
+
 const parseCSV = (csvText: string): any[] => {
   const lines = csvText.split('\n').filter(line => line.trim());
   if (lines.length < 2) return [];
   
-  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+  const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, ''));
   const expectedHeaders = ['title', 'origin_account', 'destination_account', 'amount', 'currency', 'day_of_month', 'description'];
   
   // Check if headers match expected format
@@ -663,16 +685,20 @@ const parseCSV = (csvText: string): any[] => {
   
   const data = [];
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-    if (values.length === headers.length) {
+    const values = parseCSVLine(lines[i]).map(v => v.replace(/"/g, ''));
+    if (values.length >= headers.length) {
       const row: any = {};
       headers.forEach((header, index) => {
         const normalizedHeader = header.toLowerCase();
-        if (expectedHeaders.includes(normalizedHeader)) {
+        if (expectedHeaders.includes(normalizedHeader) && index < values.length) {
           row[normalizedHeader] = values[index];
         }
       });
-      data.push(row);
+      
+      // Only add row if it has the required fields
+      if (row.title && row.amount && row.currency && row.day_of_month) {
+        data.push(row);
+      }
     }
   }
   
@@ -766,7 +792,7 @@ const importFromCSV = async () => {
           title: row.title,
           origin_account: row.origin_account || null,
           destination_account: row.destination_account || null,
-          amount: parseFloat(row.amount),
+          amount: parseFloat(row.amount.replace(/[^0-9.,]/g, '').replace(',', '.')),
           currency: row.currency,
           day_of_month: parseInt(row.day_of_month),
           description: row.description || ''

@@ -16,27 +16,36 @@ def import_csv_data(db: Session, csv_file_path: str, user_id: int):
         reader = csv.DictReader(file)
 
         for row in reader:
-            # Extract and clean data
-            title = row["Title"].strip()
-            origin = row["Origin"].strip() if row["Origin"].strip() != "-" else None
-            destination = (
-                row["Destination"].strip()
-                if row["Destination"].strip() != "-"
-                else None
-            )
-            amount_str = row["Amount"].replace(",", ".").strip()
-            day_of_month = int(row["Day of Month"])
-            description = row["Description"].strip()
+            try:
+                # Extract and clean data
+                title = row["title"].strip()
+                origin = (
+                    row["origin_account"].strip()
+                    if row["origin_account"].strip() != "-"
+                    else None
+                )
+                destination = (
+                    row["destination_account"].strip()
+                    if row["destination_account"].strip() != "-"
+                    else None
+                )
+                amount_str = row["amount"].replace(",", ".").strip()
+                currency = row["currency"].strip()
+                day_of_month = int(row["day_of_month"])
+                description = row["description"].strip()
 
-            # Parse amount and currency
-            amount_parts = amount_str.split()
-            if len(amount_parts) >= 2:
-                amount = float(amount_parts[0])
-                currency = amount_parts[1]
-            else:
-                # Handle cases where currency might be missing
+                # Parse amount - handle malformed amounts like "55,99,PLN"
+                if currency in amount_str:
+                    # Amount contains currency, extract just the number
+                    amount_str = (
+                        amount_str.replace(currency, "").replace(",", ".").strip()
+                    )
+
                 amount = float(amount_str)
-                currency = "PLN"  # Default currency
+            except (ValueError, KeyError) as e:
+                print(f"Error parsing row: {row}")
+                print(f"Error details: {e}")
+                continue  # Skip this row and continue with the next one
 
             # Map origin and destination to Income/Expense for household accounting
             # If origin is "Income", this represents money coming into the household
