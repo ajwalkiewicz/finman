@@ -191,10 +191,11 @@ The frontend is built with Vue 3 and TypeScript, using:
 Short term goals
 1. Ensure security of an application
    1. Disable creating new accounts
-   2. Use OAuth2 
+   2. Use OAuth2 DONE
 2. Create an easy way to publish the app on VPS
 3. Create a backup mechanism
 4. Fix analytics page
+5. Script to add/remove/update users
 
 Long term
 1. Repay technological debt
@@ -203,9 +204,26 @@ Long term
 4. Export transactions to CSV
 5. Add graph with money flow and transactions
 6. Use better database than sqlite
+7. Add user settings panel
+8. Add admin panel
+9. Add GDPR modal
+10. Add Cookie modal
+11. Add support for mail
+12. Add encryption for database
+
+Optimization
+1. Refactor frontend to use more components and less code duplication
+2. Move from SQLAlchemy to SQLModel
+3. Use UV for project management
+4. 
+
+5. Add timestamp and invalidation period for exchange rate from proxy server
+   So, frontend won;t need to ask it for data every time, only when the 
+   validation period expires
 
 Nice to have:
-1. Spectator mode where the numbers and names of transactions and accounts are blurred
+1. Set different colors for accounts labels
+2. Spectator mode where the numbers and names of transactions and accounts are blurred
 
 ## License
 
