@@ -8,7 +8,6 @@ services:
     networks:
       - dev-net
     environment:
-      - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=30
       - DATABASE_URL=sqlite:////app/data/finance_manager.db
@@ -55,9 +54,10 @@ services:
     environment:
       - REDIS_HOST=redis  # Fixed: use service name instead of localhost
       - REDIS_PORT=6379
-      - FIXER_API_KEY=${FIXER_API_KEY}
     depends_on:
       - redis
+    volumes:
+      - redis_data:/data
     networks:
       - dev-net
     healthcheck:

@@ -56,14 +56,14 @@ class FixerAPIResponseError(FixerAPIBaseModel):
 
 
 # Load environment variables
-load_dotenv()
+load_dotenv("/app/data/.env")
 FIXER_API_KEY = os.getenv("FIXER_API_KEY")
 REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
 if not FIXER_API_KEY:
     logger.error("FIXER_API_KEY not found in env file")
-    exit(1)
+    raise ValueError("FIXER_API_KEY not found in env file")
 
 allowed_origins = [
     "http://localhost:3000",

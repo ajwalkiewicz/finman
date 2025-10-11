@@ -23,6 +23,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
+# Create directory for database and ensure proper permissions
+RUN mkdir -p /data \
+    && chmod 755 /data
+
 # Create a non-root user for security
 RUN adduser --disabled-password --gecos '' --shell /bin/bash appuser \
     && chown -R appuser:appuser /app
