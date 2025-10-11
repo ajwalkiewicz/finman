@@ -95,7 +95,10 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                       <div class="flex items-center">
                         <div class="flex-shrink-0 h-10 w-10">
-                          <div class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center">
+                          <div 
+                            class="w-10 h-10 rounded-full flex items-center justify-center"
+                            :style="{ backgroundColor: account.label_color || '#3B82F6' }"
+                          >
                             <span class="text-white text-sm font-semibold">{{ account.name.charAt(0).toUpperCase() }}</span>
                           </div>
                         </div>
@@ -227,6 +230,19 @@
                   <p class="mt-1 text-xs text-gray-500">This currency will be used for account balance calculations and flow displays.</p>
                 </div>
 
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Label Color</label>
+                  <div class="mt-2 flex items-center space-x-3">
+                    <input
+                      v-model="form.label_color"
+                      type="color"
+                      class="h-8 w-16 border border-gray-300 rounded cursor-pointer"
+                    />
+                    <span class="text-sm text-gray-600">{{ form.label_color }}</span>
+                  </div>
+                  <p class="mt-1 text-xs text-gray-500">Choose a color to help identify this account visually.</p>
+                </div>
+
                 <div class="flex justify-end space-x-3 pt-4">
                   <button
                     type="button"
@@ -342,6 +358,19 @@
                   </select>
                 </div>
 
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Label Color</label>
+                  <div class="mt-2 flex items-center space-x-3">
+                    <input
+                      v-model="editForm.label_color"
+                      type="color"
+                      class="h-8 w-16 border border-gray-300 rounded cursor-pointer"
+                    />
+                    <span class="text-sm text-gray-600">{{ editForm.label_color }}</span>
+                  </div>
+                  <p class="mt-1 text-xs text-gray-500">Choose a color to help identify this account visually.</p>
+                </div>
+
                 <div class="flex justify-end space-x-3 pt-4">
                   <button
                     type="button"
@@ -445,13 +474,15 @@ const sortDirection = ref<'asc' | 'desc'>('asc');
 const form = reactive({
   name: '',
   account_type: 'bank',
-  base_currency: 'PLN'
+  base_currency: 'PLN',
+  label_color: '#3B82F6'
 });
 
 const editForm = reactive({
   name: '',
   account_type: 'bank',
-  base_currency: 'PLN'
+  base_currency: 'PLN',
+  label_color: '#3B82F6'
 });
 
 // Filter out Income and Expense accounts (internal calculation accounts)
@@ -634,6 +665,7 @@ const resetForm = () => {
   form.name = '';
   form.account_type = 'bank';
   form.base_currency = 'PLN';
+  form.label_color = '#3B82F6';
 };
 
 const closeModal = () => {
@@ -675,7 +707,8 @@ const updateAccountCurrency = async (newCurrency: string) => {
     const updatedAccount = {
       name: selectedAccount.value.name,
       account_type: selectedAccount.value.account_type,
-      base_currency: newCurrency
+      base_currency: newCurrency,
+      label_color: selectedAccount.value.label_color || '#3B82F6'
     };
     
     await accountsAPI.update(selectedAccount.value.id, updatedAccount);
@@ -700,6 +733,7 @@ const openEditModal = (account: Account) => {
   editForm.name = account.name;
   editForm.account_type = account.account_type;
   editForm.base_currency = account.base_currency || 'PLN';
+  editForm.label_color = account.label_color || '#3B82F6';
   showEditModal.value = true;
 };
 
@@ -709,6 +743,7 @@ const closeEditModal = () => {
   editForm.name = '';
   editForm.account_type = 'bank';
   editForm.base_currency = 'PLN';
+  editForm.label_color = '#3B82F6';
 };
 
 const handleEditSubmit = async () => {

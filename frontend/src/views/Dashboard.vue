@@ -319,12 +319,20 @@
                     </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="getAccountBadgeClass(transaction.origin_account)">
+                    <span 
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
+                      :class="getAccountBadgeClass(transaction.origin_account)"
+                      :style="getAccountBadgeStyle(transaction.origin_account)"
+                    >
                       {{ transaction.origin_account || '-' }}
                     </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="getAccountBadgeClass(transaction.destination_account)">
+                    <span 
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
+                      :class="getAccountBadgeClass(transaction.destination_account)"
+                      :style="getAccountBadgeStyle(transaction.destination_account)"
+                    >
                       {{ transaction.destination_account || '-' }}
                     </span>
                   </td>
@@ -557,23 +565,44 @@ const getTransactionTypeColor = (transaction: any) => {
 const getAccountBadgeClass = (accountName: string | null) => {
   if (!accountName) return 'bg-gray-100 text-gray-800';
   
+  // Find the account by name to get its color
+  const account = financeStore.accounts.find(acc => acc.name === accountName);
+  if (account?.label_color) {
+    return '';  // Return empty string to use inline styles instead
+  }
+  
+  // Fallback to predefined colors for system accounts
   switch (accountName) {
     case 'Income':
       return 'bg-green-100 text-green-800';
     case 'Expense':
       return 'bg-red-100 text-red-800';
-    case 'Millenium':
-      return 'bg-blue-100 text-blue-800';
-    case 'Santander':
-      return 'bg-purple-100 text-purple-800';
-    case 'Revolut Adam':
-    case 'Revolut Together':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'Portu':
-      return 'bg-indigo-100 text-indigo-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }
+};
+
+const getAccountBadgeStyle = (accountName: string | null) => {
+  if (!accountName) return {};
+  
+  // Find the account by name to get its color
+  const account = financeStore.accounts.find(acc => acc.name === accountName);
+  if (account?.label_color) {
+    // Convert hex color to RGB for background with opacity
+    const hex = account.label_color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    return {
+      backgroundColor: `rgba(${r}, ${g}, ${b}, 0.1)`,
+      color: account.label_color,
+      borderColor: `rgba(${r}, ${g}, ${b}, 0.3)`,
+      border: '1px solid'
+    };
+  }
+  
+  return {};
 };
 
 const formatCurrency = (amount: number, currency: string) => {

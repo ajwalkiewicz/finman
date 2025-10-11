@@ -17,6 +17,8 @@ export interface Account {
   name: string;
   account_type: string;
   base_currency: string;
+  label_color: string;
+  owner_id?: number;
   created_at?: string;
 }
 

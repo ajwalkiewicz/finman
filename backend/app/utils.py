@@ -8,19 +8,9 @@ from . import crud, schemas
 def import_csv_data(db: Session, csv_file_path: str, user_id: int):
     """Import data from CSV file into the database"""
 
-    # First, create standard accounts
-    accounts_to_create = ["Income", "Expense"]
-    accounts_created = set()
-
-    # Create Income and Expense accounts
-    for account_name in accounts_to_create:
-        existing_accounts = crud.get_accounts(db, user_id)
-        if not any(acc.name == account_name for acc in existing_accounts):
-            account_create = schemas.AccountCreate(
-                name=account_name, account_type="system"
-            )
-            crud.create_account(db, account_create, user_id)
-        accounts_created.add(account_name)
+    # Create Income and Expense accounts for this user if they don't exist
+    create_user_income_expense_accounts(db, user_id)
+    accounts_created = {"Income", "Expense"}
 
     with open(csv_file_path, "r", encoding="utf-8") as file:
         reader = csv.DictReader(file)
@@ -98,7 +88,7 @@ def import_csv_data(db: Session, csv_file_path: str, user_id: int):
 
 
 def setup_initial_data(db: Session):
-    """Set up initial data including a default user"""
+    """Set up initial data including a default user and their Income/Expense accounts"""
     # Create default user if not exists
     user = crud.get_user_by_username(db, "admin")
     if not user:
@@ -106,4 +96,35 @@ def setup_initial_data(db: Session):
         user = crud.create_user(db, user_create)
         print("Created default admin user")
 
+        # Create Income and Expense accounts for the new user
+        create_user_income_expense_accounts(db, user.id)
+
     return user
+
+
+def create_user_income_expense_accounts(db: Session, user_id: int):
+    """Create Income and Expense accounts for a specific user"""
+    existing_accounts = crud.get_accounts(db, user_id)
+    existing_names = {acc.name for acc in existing_accounts}
+
+    # Create Income account if it doesn't exist
+    if "Income" not in existing_names:
+        income_account = schemas.AccountCreate(
+            name="Income",
+            account_type="virtual",
+            base_currency="PLN",
+            label_color="#10B981",  # Green color: bg-green-100 text-green-800 equivalent
+        )
+        crud.create_account(db, income_account, user_id)
+        print(f"Created Income account for user {user_id}")
+
+    # Create Expense account if it doesn't exist
+    if "Expense" not in existing_names:
+        expense_account = schemas.AccountCreate(
+            name="Expense",
+            account_type="virtual",
+            base_currency="PLN",
+            label_color="#EF4444",  # Red color: bg-red-100 text-red-800 equivalent
+        )
+        crud.create_account(db, expense_account, user_id)
+        print(f"Created Expense account for user {user_id}")

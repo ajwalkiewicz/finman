@@ -28,6 +28,13 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+
+    # Import here to avoid circular imports
+    from . import utils
+
+    # Create Income and Expense accounts for the new user
+    utils.create_user_income_expense_accounts(db, db_user.id)
+
     return db_user
 
 
