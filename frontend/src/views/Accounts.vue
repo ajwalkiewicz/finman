@@ -1,38 +1,4 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center">
-            <router-link to="/" class="text-xl font-semibold text-gray-900">Finance Manager</router-link>
-          </div>
-          <div class="flex items-center space-x-4">
-            <router-link to="/" class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-              Dashboard
-            </router-link>
-            <router-link to="/transactions" class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-              Transactions
-            </router-link>
-            <span class="text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
-              Accounts
-            </span>
-            <router-link to="/analytics" class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-              Analytics
-            </router-link>
-            <router-link to="/settings" class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-              Settings
-            </router-link>
-            <button
-              @click="authStore.logout(); $router.push('/login')"
-              class="bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-700"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
-    </nav>
-
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div class="px-4 py-6 sm:px-0">
         <div class="flex justify-between items-center mb-6">
@@ -441,12 +407,10 @@
         </div>
       </div>
     </main>
-  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
-import { useAuthStore } from '@/stores/auth';
 import { useFinanceStore } from '@/stores/finance';
 import { exchangeRatesAPI } from '@/services/api';
 import { accountsAPI } from '@/services/api';
@@ -457,7 +421,6 @@ import type { Account, ExchangeRatesResponse } from '@/types';
 const baseCurrency = ref<string>(localStorage.getItem('baseCurrency') || 'PLN');
 const exchangeRates = ref<ExchangeRatesResponse | null>(null);
 
-const authStore = useAuthStore();
 const financeStore = useFinanceStore();
 
 const showModal = ref(false);
