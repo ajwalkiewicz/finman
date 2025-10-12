@@ -47,6 +47,25 @@ def authenticate_user(db: Session, username: str, password: str):
     return user
 
 
+def change_user_password(
+    db: Session, user_id: int, current_password: str, new_password: str
+):
+    """Change user password after verifying current password."""
+    user = get_user(db, user_id)
+    if not user:
+        return False
+
+    # Verify current password
+    if not verify_password(current_password, user.hashed_password):
+        return False
+
+    # Update with new password
+    user.hashed_password = get_password_hash(new_password)
+    db.commit()
+    db.refresh(user)
+    return True
+
+
 def create_transaction(
     db: Session, transaction: schemas.TransactionCreate, user_id: int
 ):

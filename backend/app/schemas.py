@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+from .password_validator import PasswordValidator
 
 
 class UserBase(BaseModel):
@@ -10,6 +12,25 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        """Validate password meets security requirements."""
+        PasswordValidator.validate_and_raise(v)
+        return v
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password_strength(cls, v: str) -> str:
+        """Validate new password meets security requirements."""
+        PasswordValidator.validate_and_raise(v)
+        return v
 
 
 class User(UserBase):

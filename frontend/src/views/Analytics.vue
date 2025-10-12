@@ -19,6 +19,9 @@
             <span class="text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
               Analytics
             </span>
+            <router-link to="/settings" class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+              Settings
+            </router-link>
             <button
               @click="authStore.logout(); $router.push('/login')"
               class="bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-700"

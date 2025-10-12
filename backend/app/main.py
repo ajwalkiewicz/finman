@@ -8,6 +8,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from . import auth, crud, database, schemas
+from .password_validator import PasswordValidationError, PasswordValidator
 
 
 # Lifespan event to create database and tables
@@ -45,6 +46,24 @@ app.add_middleware(
 
 
 # Authentication endpoints
+@app.get("/password-requirements")
+def get_password_requirements():
+    """Get password requirements for the frontend to display."""
+    return {
+        "min_length": PasswordValidator.MIN_LENGTH,
+        "requirements": [
+            f"At least {PasswordValidator.MIN_LENGTH} characters long",
+            "At least one uppercase letter (A-Z)",
+            "At least one lowercase letter (a-z)",
+            "At least one digit (0-9)",
+            f"At least one special character ({PasswordValidator.SPECIAL_CHARACTERS})",
+            "Cannot be a common password",
+            "Cannot contain more than 3 consecutive identical characters",
+            "Cannot contain simple sequences (like '1234' or 'abcd')",
+        ],
+    }
+
+
 @app.post("/token", response_model=schemas.Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -69,13 +88,55 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(database.get_ses
     db_user = crud.get_user_by_username(db, username=user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
-    return crud.create_user(db=db, user=user)
+
+    try:
+        return crud.create_user(db=db, user=user)
+    except PasswordValidationError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "type": "password_validation_error",
+                "message": "Password does not meet security requirements",
+                "requirements": e.messages,
+            },
+        )
 
 
 # User endpoints
 @app.get("/users/me", response_model=schemas.User)
 async def read_users_me(current_user: database.User = Depends(auth.get_current_user)):
     return current_user
+
+
+@app.put("/users/me/password")
+async def change_password(
+    password_data: schemas.PasswordChange,
+    db: Session = Depends(database.get_session),
+    current_user: database.User = Depends(auth.get_current_user),
+):
+    """Change the current user's password."""
+    try:
+        success = crud.change_user_password(
+            db,
+            current_user.id,
+            password_data.current_password,
+            password_data.new_password,
+        )
+
+        if not success:
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+        return {"message": "Password changed successfully"}
+
+    except PasswordValidationError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "type": "password_validation_error",
+                "message": "New password does not meet security requirements",
+                "requirements": e.messages,
+            },
+        )
 
 
 # Transaction endpoints
