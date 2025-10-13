@@ -19,9 +19,10 @@ class UserCreate(BaseModel):
     @classmethod
     def validate_username(cls, v: str) -> str:
         """Validate username meets requirements for new accounts."""
-        if not re.match(r"^[a-zA-Z_]{6,}$", v):
+        if not re.match(r"^[a-zA-Z0-9_]{6,}$", v):
             raise ValueError(
-                "Username must be at least 6 characters long and contain only English letters (a-z, A-Z) and underscores"
+                "Username must be at least 6 characters long and contain only "
+                "English letters (a-z, A-Z), numbers (0-9), and underscores"
             )
         return v
 

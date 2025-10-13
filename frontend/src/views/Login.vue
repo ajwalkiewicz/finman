@@ -133,12 +133,12 @@ const validateUsername = () => {
     return;
   }
 
-  const usernameRegex = /^[a-zA-Z_]{6,}$/;
+  const usernameRegex = /^[a-zA-Z0-9_]{6,}$/;
   if (!username.value) {
     usernameError.value = 'Username is required';
     isUsernameValid.value = false;
   } else if (!usernameRegex.test(username.value)) {
-    usernameError.value = 'Username must be at least 6 characters long and contain only English letters (a-z, A-Z) and underscores';
+    usernameError.value = 'Username must be at least 6 characters long and contain only English letters (a-z, A-Z), numbers (0-9), and underscores';
     isUsernameValid.value = false;
   } else {
     usernameError.value = '';
