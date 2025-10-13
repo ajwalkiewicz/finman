@@ -6,8 +6,8 @@ import os
 from datetime import date, datetime
 from typing import Literal, cast
 
+import httpx
 import redis
-import requests
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -144,7 +144,7 @@ def fetch_from_fixer_api() -> FixerAPIResponseSuccess:
     params = {"access_key": FIXER_API_KEY, "symbols": "USD,EUR,PLN,GTQ"}
 
     try:
-        response = requests.get(url, params=params, timeout=10)
+        response = httpx.get(url, params=params, timeout=10)
         response.raise_for_status()
 
         data = response.json()
@@ -154,7 +154,7 @@ def fetch_from_fixer_api() -> FixerAPIResponseSuccess:
             data = FixerAPIResponseError.model_validate(data)
             raise Exception(f"Fixer API error: {data.error}")
 
-    except requests.RequestException as e:
+    except httpx.HTTPError as e:
         logger.error(f"Error fetching from Fixer API: {e}")
         raise
 

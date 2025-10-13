@@ -1,10 +1,15 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 from datetime import timedelta
 
+import redis.asyncio as redis
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
 from sqlalchemy.orm import Session
 
 from . import auth, crud, database, schemas
@@ -16,16 +21,32 @@ from .password_validator import PasswordValidationError, PasswordValidator
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     logging.info("Starting up and setting up the database...")
+
+    # Initialize Redis for rate limiting
+    load_dotenv("/app/data/.env")
+    REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
+    REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+
+    redis_connection = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, encoding="utf-8")
+    await FastAPILimiter.init(redis_connection)
+
     # Create database tables
     database.create_tables()
     database.setup_database()
+
     yield
+
+    await FastAPILimiter.close()
+    logging.info("Shutting down...")
 
 
 app = FastAPI(
     title="Finance Manager API",
     version="1.0.0",
     lifespan=lifespan,
+    dependencies=[
+        Depends(RateLimiter(times=100, seconds=60))
+    ],  # Rate limit: 100 requests per minute
     docs_url=None,  # Disables Swagger UI at /docs
     redoc_url=None,  # Disables ReDoc at /redoc
     openapi_url=None,  # Disables OpenAPI JSON at /openapi.json
