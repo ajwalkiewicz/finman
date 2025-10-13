@@ -150,7 +150,7 @@
                         Edit
                       </button>
                       <button
-                        @click="deleteTransaction(transaction.id!)"
+                        @click="confirmDelete(transaction)"
                         class="inline-flex items-center text-red-600 hover:text-red-900"
                       >
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -384,6 +384,50 @@
             </div>
           </div>
         </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div v-if="showDeleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+              <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.232 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                </svg>
+              </div>
+              
+              <h3 class="text-lg font-medium text-gray-900 text-center mb-2">Delete Transaction</h3>
+              
+              <p class="text-sm text-gray-600 text-center mb-4">
+                Are you sure you want to delete the transaction "<strong>{{ selectedTransaction?.title }}</strong>"? 
+                This action cannot be undone.
+              </p>
+              
+              <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p class="text-xs text-yellow-800">
+                  <strong>Warning:</strong> Deleting this transaction will permanently remove it from your records and may affect your account balances and analytics.
+                </p>
+              </div>
+
+              <div class="flex justify-center space-x-3">
+                <button
+                  type="button"
+                  @click="closeDeleteModal"
+                  :disabled="deleteSubmitting"
+                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  @click="handleDelete"
+                  :disabled="deleteSubmitting"
+                  class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 disabled:opacity-50"
+                >
+                  {{ deleteSubmitting ? 'Deleting...' : 'Delete Transaction' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
 </template>
@@ -398,6 +442,11 @@ const financeStore = useFinanceStore();
 const showModal = ref(false);
 const editingTransaction = ref<Transaction | null>(null);
 const submitting = ref(false);
+
+// Delete modal state
+const showDeleteModal = ref(false);
+const selectedTransaction = ref<Transaction | null>(null);
+const deleteSubmitting = ref(false);
 
 // CSV Import/Export state
 const selectedFile = ref<File | null>(null);
@@ -595,14 +644,28 @@ const handleSubmit = async () => {
   }
 };
 
-const deleteTransaction = async (id: number) => {
-  if (confirm('Are you sure you want to delete this transaction?')) {
-    try {
-      await financeStore.deleteTransaction(id);
-      // Note: No need to refetch transactions as the store updates them automatically
-    } catch (error) {
-      console.error('Failed to delete transaction:', error);
-    }
+const confirmDelete = (transaction: Transaction) => {
+  selectedTransaction.value = transaction;
+  showDeleteModal.value = true;
+};
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false;
+  selectedTransaction.value = null;
+};
+
+const handleDelete = async () => {
+  if (!selectedTransaction.value?.id) return;
+  
+  deleteSubmitting.value = true;
+  try {
+    await financeStore.deleteTransaction(selectedTransaction.value.id);
+    // Note: No need to refetch transactions as the store updates them automatically
+    closeDeleteModal();
+  } catch (error) {
+    console.error('Failed to delete transaction:', error);
+  } finally {
+    deleteSubmitting.value = false;
   }
 };
 
