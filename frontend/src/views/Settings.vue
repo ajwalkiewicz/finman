@@ -1,10 +1,10 @@
 <template>
   <div class="settings-page">
-    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
       <!-- Header -->
-      <div class="md:flex md:items-center md:justify-between mb-8">
+      <div class="mb-6 sm:mb-8">
         <div class="flex-1 min-w-0">
-          <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+          <h2 class="text-xl sm:text-2xl font-bold leading-7 text-gray-900 lg:text-3xl">
             Settings
           </h2>
           <p class="mt-1 text-sm text-gray-500">

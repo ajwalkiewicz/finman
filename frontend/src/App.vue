@@ -21,7 +21,9 @@ onMounted(() => {
   <div id="app">
     <div class="min-h-screen bg-gray-50">
       <Navigation v-if="showNavigation" />
-      <RouterView />
+      <div class="w-full overflow-x-hidden">
+        <RouterView />
+      </div>
     </div>
   </div>
 </template>

@@ -1,12 +1,12 @@
 <template>
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div class="px-4 py-6 sm:px-0">
-        <div class="flex justify-between items-center mb-6">
-          <h1 class="text-2xl font-bold text-gray-900">Accounts</h1>
+    <main class="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+      <div class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Accounts</h1>
           <button
             @click="showModal = true"
             :disabled="!subscriptionInfo?.can_add_account"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white"
+            class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white w-full sm:w-auto"
             :class="subscriptionInfo?.can_add_account ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-400 cursor-not-allowed'"
           >
             Add Account

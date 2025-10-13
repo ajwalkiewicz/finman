@@ -9,3 +9,32 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #f9fafb;
 }
+
+/* Mobile-first responsive utilities */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .overflow-x-auto {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 3px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af;
+  }
+}

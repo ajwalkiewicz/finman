@@ -1,14 +1,14 @@
 <template>
 
 
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div class="px-4 py-6 sm:px-0">
-        <div class="flex justify-between items-center mb-6">
-          <h1 class="text-2xl font-bold text-gray-900">Transactions</h1>
+    <main class="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+      <div class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Transactions</h1>
           <button
             @click="showModal = true"
             :disabled="!subscriptionInfo?.can_add_transaction"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white"
+            class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white w-full sm:w-auto"
             :class="subscriptionInfo?.can_add_transaction ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-400 cursor-not-allowed'"
           >
             Add Transaction
@@ -61,34 +61,36 @@
         <!-- Transaction List -->
         <div class="bg-white shadow overflow-hidden sm:rounded-md">
           <div class="px-4 py-5 sm:px-6">
-            <div class="flex justify-between items-center">
+            <div class="space-y-4">
               <div>
                 <h3 class="text-lg leading-6 font-medium text-gray-900">All Transactions</h3>
                 <p class="mt-1 max-w-2xl text-sm text-gray-500">Manage your household transactions</p>
               </div>
-              <div class="flex items-center space-x-2">
-                <label for="sort-select" class="text-sm font-medium text-gray-700">Sort by:</label>
-                <select 
-                  id="sort-select"
-                  v-model="sortBy" 
-                  @change="updateSort"
-                  class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="day">Day</option>
-                  <option value="title">Transaction Name</option>
-                  <option value="origin_account">From Account</option>
-                  <option value="destination_account">To Account</option>
-                  <option value="amount">Amount</option>
-                </select>
-                <button 
-                  @click="toggleSortDirection"
-                  class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  :title="sortDirection === 'asc' ? 'Sort ascending' : 'Sort descending'"
-                >
-                  <svg class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                  </svg>
-                </button>
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+                <label for="sort-select" class="text-sm font-medium text-gray-700 sm:flex-shrink-0">Sort by:</label>
+                <div class="flex items-center space-x-2">
+                  <select 
+                    id="sort-select"
+                    v-model="sortBy" 
+                    @change="updateSort"
+                    class="flex-1 sm:flex-initial border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="day">Day</option>
+                    <option value="title">Transaction Name</option>
+                    <option value="origin_account">From Account</option>
+                    <option value="destination_account">To Account</option>
+                    <option value="amount">Amount</option>
+                  </select>
+                  <button 
+                    @click="toggleSortDirection"
+                    class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 flex-shrink-0"
+                    :title="sortDirection === 'asc' ? 'Sort ascending' : 'Sort descending'"
+                  >
+                    <svg class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -148,7 +148,7 @@
     </div>
 
     <!-- Subscription Plans -->
-    <div v-if="subscriptionLimits" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div v-if="subscriptionLimits" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <div v-for="(plan, key) in subscriptionLimits" :key="key"
            class="bg-white rounded-lg shadow p-6 border-2 transition-colors duration-200"
            :class="subscriptionInfo?.subscription_type === key ? 'border-blue-500' : 'border-gray-200 hover:border-gray-300'">

@@ -1,29 +1,31 @@
 <template>
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div class="px-4 py-6 sm:px-0">
+    <main class="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+      <div class="space-y-6">
         <!-- Income and Expense Summary Cards -->
         <div v-if="financeStore.expenseSummary" class="mb-6">
           <!-- Base Currency Selection -->
-          <div class="mb-4 flex items-center space-x-4">
-            <label for="dashboard-base-currency" class="text-sm font-medium text-gray-700">Base currency:</label>
-            <select 
-              id="dashboard-base-currency"
-              v-model="baseCurrency" 
-              @change="handleCurrencyChange"
-              class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="PLN">PLN</option>
-              <option value="EUR">EUR</option>
-              <option value="USD">USD</option>
-              <option value="GTQ">GTQ</option>
-            </select>
-            <span v-if="exchangeRates" class="text-xs text-gray-500">
-              Rates from: {{ formatTimestamp(exchangeRates.timestamp) }}
-            </span>
+          <div class="mb-4 bg-white rounded-lg p-4 shadow">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0">
+              <label for="dashboard-base-currency" class="text-sm font-medium text-gray-700 flex-shrink-0">Base currency:</label>
+              <select 
+                id="dashboard-base-currency"
+                v-model="baseCurrency" 
+                @change="handleCurrencyChange"
+                class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto"
+              >
+                <option value="PLN">PLN</option>
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+                <option value="GTQ">GTQ</option>
+              </select>
+              <span v-if="exchangeRates" class="text-xs text-gray-500 break-words">
+                Rates from: {{ formatTimestamp(exchangeRates.timestamp) }}
+              </span>
+            </div>
           </div>
 
           <!-- First Row: Main Summary Cards -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
             <!-- Total Income -->
             <div class="bg-white overflow-hidden shadow rounded-lg">
               <div class="p-5">
@@ -89,7 +91,7 @@
           </div>
 
           <!-- Second Row: Currency-specific Expenses -->
-          <div v-if="financeStore.expenseSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div v-if="financeStore.expenseSummary" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             <!-- PLN Expenses -->
             <div 
               class="bg-white overflow-hidden shadow rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md"
@@ -195,34 +197,36 @@
         <!-- All Transactions -->
         <div class="bg-white shadow overflow-hidden sm:rounded-md mb-8">
           <div class="px-4 py-5 sm:px-6">
-            <div class="flex justify-between items-center">
+            <div class="space-y-4">
               <div>
                 <h3 class="text-lg leading-6 font-medium text-gray-900">All Transactions</h3>
                 <p class="mt-1 max-w-2xl text-sm text-gray-500">Complete list of household transactions</p>
               </div>
-              <div class="flex items-center space-x-2">
-                <label for="sort-select" class="text-sm font-medium text-gray-700">Sort by:</label>
-                <select 
-                  id="sort-select"
-                  v-model="sortBy" 
-                  @change="updateSort"
-                  class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="day">Day</option>
-                  <option value="title">Transaction Name</option>
-                  <option value="origin_account">From Account</option>
-                  <option value="destination_account">To Account</option>
-                  <option value="amount">Amount</option>
-                </select>
-                <button 
-                  @click="toggleSortDirection"
-                  class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  :title="sortDirection === 'asc' ? 'Sort ascending' : 'Sort descending'"
-                >
-                  <svg class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                  </svg>
-                </button>
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+                <label for="sort-select" class="text-sm font-medium text-gray-700 sm:flex-shrink-0">Sort by:</label>
+                <div class="flex items-center space-x-2">
+                  <select 
+                    id="sort-select"
+                    v-model="sortBy" 
+                    @change="updateSort"
+                    class="flex-1 sm:flex-initial border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="day">Day</option>
+                    <option value="title">Transaction Name</option>
+                    <option value="origin_account">From Account</option>
+                    <option value="destination_account">To Account</option>
+                    <option value="amount">Amount</option>
+                  </select>
+                  <button 
+                    @click="toggleSortDirection"
+                    class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 flex-shrink-0"
+                    :title="sortDirection === 'asc' ? 'Sort ascending' : 'Sort descending'"
+                  >
+                    <svg class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -230,7 +234,7 @@
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('title')">
+                  <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('title')">
                     <div class="flex items-center space-x-1">
                       <span>Transaction</span>
                       <svg v-if="sortBy === 'title'" class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -238,7 +242,7 @@
                       </svg>
                     </div>
                   </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('origin_account')">
+                  <th scope="col" class="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('origin_account')">
                     <div class="flex items-center space-x-1">
                       <span>From Account</span>
                       <svg v-if="sortBy === 'origin_account'" class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,7 +250,7 @@
                       </svg>
                     </div>
                   </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('destination_account')">
+                  <th scope="col" class="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('destination_account')">
                     <div class="flex items-center space-x-1">
                       <span>To Account</span>
                       <svg v-if="sortBy === 'destination_account'" class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,7 +258,7 @@
                       </svg>
                     </div>
                   </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('amount')">
+                  <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('amount')">
                     <div class="flex items-center space-x-1">
                       <span>Amount</span>
                       <svg v-if="sortBy === 'amount'" class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -262,32 +266,36 @@
                       </svg>
                     </div>
                   </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('day')">
+                  <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="setSortBy('day')">
                     <div class="flex items-center space-x-1">
-                      <span>Day</span>
+                      <span class="sm:hidden">Day</span>
+                      <span class="hidden sm:inline">Day</span>
                       <svg v-if="sortBy === 'day'" class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': sortDirection === 'desc' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
                       </svg>
                     </div>
                   </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" class="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Description
                   </th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-for="transaction in sortedTransactions" :key="transaction.id" class="hover:bg-gray-50">
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div class="flex-shrink-0">
+                  <td class="px-3 sm:px-6 py-4">
+                    <div class="flex items-start">
+                      <div class="flex-shrink-0 mt-1">
                         <div class="w-3 h-3 rounded-full" :class="getTransactionTypeColor(transaction)"></div>
                       </div>
-                      <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-900">{{ transaction.title }}</div>
+                      <div class="ml-3 min-w-0 flex-1">
+                        <div class="text-sm font-medium text-gray-900 truncate">{{ transaction.title }}</div>
+                        <div class="sm:hidden text-xs text-gray-500 mt-1">
+                          {{ transaction.origin_account }} → {{ transaction.destination_account }}
+                        </div>
                       </div>
                     </div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
+                  <td class="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                     <span 
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
                       :class="getAccountBadgeClass(transaction.origin_account)"
@@ -296,7 +304,7 @@
                       {{ transaction.origin_account || '-' }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
+                  <td class="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                     <span 
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
                       :class="getAccountBadgeClass(transaction.destination_account)"
@@ -305,13 +313,13 @@
                       {{ transaction.destination_account || '-' }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {{ formatCurrency(transaction.amount, transaction.currency) }}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {{ transaction.day_of_month }}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {{ transaction.description }}
                   </td>
                 </tr>
@@ -324,16 +332,16 @@
         <div class="bg-white shadow sm:rounded-lg">
           <div class="px-4 py-5 sm:p-6">
             <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Quick Actions</h3>
-            <div class="flex space-x-4">
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
               <router-link
                 to="/transactions"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
               >
                 Manage Transactions
               </router-link>
               <router-link
                 to="/accounts"
-                class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
                 Manage Accounts
               </router-link>

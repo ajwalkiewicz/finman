@@ -1,19 +1,19 @@
 <template>
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div class="px-4 py-6 sm:px-0">
-        <h1 class="text-2xl font-bold text-gray-900 mb-6">Analytics</h1>
+    <main class="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+      <div class="space-y-6">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Analytics</h1>
 
         <!-- Base Currency Selection -->
         <div class="bg-white shadow sm:rounded-lg mb-8">
           <div class="px-4 py-5 sm:p-6">
             <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Exchange Rates</h3>
-            <div class="flex items-center space-x-4 mb-4">
-              <label for="base-currency" class="text-sm font-medium text-gray-700">Base Currency:</label>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0 mb-4">
+              <label for="base-currency" class="text-sm font-medium text-gray-700 flex-shrink-0">Base Currency:</label>
               <select 
                 id="base-currency"
                 v-model="baseCurrency" 
                 @change="handleCurrencyChange"
-                class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto"
               >
                 <option value="PLN">PLN</option>
                 <option value="EUR">EUR</option>
@@ -23,7 +23,7 @@
             </div>
             
             <!-- Exchange Rate Cards -->
-            <div v-if="exchangeRates" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div v-if="exchangeRates" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div 
                 v-for="(rate, currency) in exchangeRates.rates" 
                 :key="currency"
