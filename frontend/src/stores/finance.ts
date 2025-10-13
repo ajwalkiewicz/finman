@@ -26,7 +26,7 @@ export const useFinanceStore = defineStore('finance', () => {
     try {
       const newTransaction = await transactionsAPI.create(transaction);
       transactions.value.push(newTransaction);
-      await fetchAnalytics(); // Refresh analytics
+      // Note: Analytics refresh is now manual to prevent excessive API calls
       return newTransaction;
     } catch (error) {
       console.error('Failed to create transaction:', error);
@@ -41,7 +41,7 @@ export const useFinanceStore = defineStore('finance', () => {
       if (index !== -1) {
         transactions.value[index] = updatedTransaction;
       }
-      await fetchAnalytics(); // Refresh analytics
+      // Note: Analytics refresh is now manual to prevent excessive API calls
       return updatedTransaction;
     } catch (error) {
       console.error('Failed to update transaction:', error);
@@ -53,7 +53,7 @@ export const useFinanceStore = defineStore('finance', () => {
     try {
       await transactionsAPI.delete(id);
       transactions.value = transactions.value.filter(t => t.id !== id);
-      await fetchAnalytics(); // Refresh analytics
+      // Note: Analytics refresh is now manual to prevent excessive API calls
     } catch (error) {
       console.error('Failed to delete transaction:', error);
       throw error;
@@ -118,6 +118,11 @@ export const useFinanceStore = defineStore('finance', () => {
     }
   };
   
+  // Manual analytics refresh for bulk operations
+  const refreshAnalytics = async () => {
+    await fetchAnalytics();
+  };
+
   return {
     transactions,
     accounts,
@@ -132,6 +137,7 @@ export const useFinanceStore = defineStore('finance', () => {
     createAccount,
     updateAccount,
     deleteAccount,
-    fetchAnalytics
+    fetchAnalytics,
+    refreshAnalytics
   };
 });

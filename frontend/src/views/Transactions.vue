@@ -216,7 +216,7 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  {{ importing ? 'Importing...' : 'Import Transactions' }}
+                  {{ importing ? `Importing... ${importProgress}%` : 'Import Transactions' }}
                 </button>
               </div>
 
@@ -402,6 +402,7 @@ const submitting = ref(false);
 // CSV Import/Export state
 const selectedFile = ref<File | null>(null);
 const importing = ref(false);
+const importProgress = ref(0);
 const exporting = ref(false);
 const importResults = ref<{
   success: boolean;
@@ -409,6 +410,9 @@ const importResults = ref<{
   details?: string[];
 } | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
+
+// Rate limiting configuration
+const RATE_LIMIT_DELAY = 1000; // Minimum delay between requests in ms
 
 // Sorting state
 const sortBy = ref<string>('day');
@@ -583,6 +587,7 @@ const handleSubmit = async () => {
       await financeStore.createTransaction(form);
     }
     closeModal();
+    // Note: No need to refetch transactions/accounts as the store updates them automatically
   } catch (error) {
     console.error('Failed to save transaction:', error);
   } finally {
@@ -594,6 +599,7 @@ const deleteTransaction = async (id: number) => {
   if (confirm('Are you sure you want to delete this transaction?')) {
     try {
       await financeStore.deleteTransaction(id);
+      // Note: No need to refetch transactions as the store updates them automatically
     } catch (error) {
       console.error('Failed to delete transaction:', error);
     }
@@ -741,64 +747,89 @@ const importFromCSV = async () => {
       await createAccountIfNotExists(accountName);
     }
     
-    // Refresh accounts list after creating new ones
-    await financeStore.fetchAccounts();
-    
-    // Import transactions
-    for (let i = 0; i < csvData.length; i++) {
-      const row = csvData[i];
-      
-      try {
-        // Validate required fields
-        if (!row.title || !row.amount || !row.currency || !row.day_of_month) {
-          errors.push(`Row ${i + 2}: Missing required fields (title, amount, currency, day_of_month)`);
-          errorCount++;
-          continue;
-        }
-        
-        const transactionData = {
-          title: row.title,
-          origin_account: row.origin_account || null,
-          destination_account: row.destination_account || null,
-          amount: parseFloat(row.amount.replace(/[^0-9.,]/g, '').replace(',', '.')),
-          currency: row.currency,
-          day_of_month: parseInt(row.day_of_month),
-          description: row.description || ''
-        };
-        
-        // Validate amount and day
-        if (isNaN(transactionData.amount) || transactionData.amount <= 0) {
-          errors.push(`Row ${i + 2}: Invalid amount`);
-          errorCount++;
-          continue;
-        }
-        
-        if (isNaN(transactionData.day_of_month) || transactionData.day_of_month < 1 || transactionData.day_of_month > 31) {
-          errors.push(`Row ${i + 2}: Invalid day of month`);
-          errorCount++;
-          continue;
-        }
-        
-        // Check if transaction already exists
-        if (transactionExists(transactionData)) {
-          skippedCount++;
-          continue;
-        }
-        
-        await financeStore.createTransaction(transactionData);
-        importedCount++;
-        
-      } catch (error) {
-        errors.push(`Row ${i + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        errorCount++;
-      }
+    // Only refresh accounts if we actually created new ones
+    if (accountsToCreate.size > 0) {
+      await financeStore.fetchAccounts();
     }
+    
+    // Import transactions with rate limiting
+    const batchSize = 4; // Process 4 transactions at a time
+    importProgress.value = 0;
+    
+    for (let i = 0; i < csvData.length; i += batchSize) {
+      const batch = csvData.slice(i, i + batchSize);
+      
+      // Update progress
+      importProgress.value = Math.round((i / csvData.length) * 100);
+      
+      // Process batch with rate limiting
+      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
+      
+      const batchPromises = batch.map(async (row, batchIndex) => {
+        const rowIndex = i + batchIndex;
+        
+        try {
+          // Validate required fields
+          if (!row.title || !row.amount || !row.currency || !row.day_of_month) {
+            errors.push(`Row ${rowIndex + 2}: Missing required fields (title, amount, currency, day_of_month)`);
+            errorCount++;
+            return;
+          }
+          
+          const transactionData = {
+            title: row.title,
+            origin_account: row.origin_account || null,
+            destination_account: row.destination_account || null,
+            amount: parseFloat(row.amount.replace(/[^0-9.,]/g, '').replace(',', '.')),
+            currency: row.currency,
+            day_of_month: parseInt(row.day_of_month),
+            description: row.description || ''
+          };
+          
+          // Validate amount and day
+          if (isNaN(transactionData.amount) || transactionData.amount <= 0) {
+            errors.push(`Row ${rowIndex + 2}: Invalid amount`);
+            errorCount++;
+            return;
+          }
+          
+          if (isNaN(transactionData.day_of_month) || transactionData.day_of_month < 1 || transactionData.day_of_month > 31) {
+            errors.push(`Row ${rowIndex + 2}: Invalid day of month`);
+            errorCount++;
+            return;
+          }
+          
+          // Check if transaction already exists
+          if (transactionExists(transactionData)) {
+            skippedCount++;
+            return;
+          }
+          
+          await financeStore.createTransaction(transactionData);
+          importedCount++;
+          
+        } catch (error) {
+          errors.push(`Row ${rowIndex + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          errorCount++;
+        }
+      });
+      
+      await Promise.allSettled(batchPromises);
+    }
+    
+    // Complete progress
+    importProgress.value = 100;
     
     importResults.value = {
       success: errorCount === 0 || importedCount > 0,
       message: `Import completed: ${importedCount} imported, ${skippedCount} skipped (duplicates), ${errorCount} errors`,
       details: errors.length > 0 ? errors.slice(0, 10) : undefined // Show only first 10 errors
     };
+    
+    // Refresh analytics only after bulk import if transactions were imported
+    if (importedCount > 0) {
+      await financeStore.refreshAnalytics();
+    }
     
     // Clear the file input
     selectedFile.value = null;
@@ -813,6 +844,7 @@ const importFromCSV = async () => {
     };
   } finally {
     importing.value = false;
+    importProgress.value = 0;
   }
 };
 
@@ -858,6 +890,7 @@ const exportToCSV = () => {
 };
 
 onMounted(async () => {
+  // Only fetch transactions and accounts - analytics will be loaded when needed
   await Promise.all([
     financeStore.fetchTransactions(),
     financeStore.fetchAccounts()
