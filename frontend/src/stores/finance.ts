@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { transactionsAPI, accountsAPI, analyticsAPI } from '@/services/api';
-import type { Transaction, Account, ExpenseSummary, AccountFlow } from '@/types';
+import { transactionsAPI, accountsAPI, analyticsAPI, subscriptionAPI } from '@/services/api';
+import type { Transaction, Account, ExpenseSummary, AccountFlow, SubscriptionInfo, SubscriptionLimitError } from '@/types';
 
 export const useFinanceStore = defineStore('finance', () => {
   const transactions = ref<Transaction[]>([]);
   const accounts = ref<Account[]>([]);
   const expenseSummary = ref<ExpenseSummary | null>(null);
   const accountFlow = ref<AccountFlow>({});
+  const subscriptionInfo = ref<SubscriptionInfo | null>(null);
   const loading = ref(false);
   
   // Transactions
@@ -26,9 +27,19 @@ export const useFinanceStore = defineStore('finance', () => {
     try {
       const newTransaction = await transactionsAPI.create(transaction);
       transactions.value.push(newTransaction);
+      // Refresh subscription info to update transaction count
+      await fetchSubscriptionInfo();
       // Note: Analytics refresh is now manual to prevent excessive API calls
       return newTransaction;
-    } catch (error) {
+    } catch (error: any) {
+      // Check if it's a subscription limit error
+      if (error?.response?.data?.detail?.type === 'subscription_limit_error') {
+        const limitError: SubscriptionLimitError = {
+          type: 'subscription_limit_error',
+          message: error.response.data.detail.message
+        };
+        throw limitError;
+      }
       console.error('Failed to create transaction:', error);
       throw error;
     }
@@ -53,6 +64,8 @@ export const useFinanceStore = defineStore('finance', () => {
     try {
       await transactionsAPI.delete(id);
       transactions.value = transactions.value.filter(t => t.id !== id);
+      // Refresh subscription info to update transaction count
+      await fetchSubscriptionInfo();
       // Note: Analytics refresh is now manual to prevent excessive API calls
     } catch (error) {
       console.error('Failed to delete transaction:', error);
@@ -73,8 +86,18 @@ export const useFinanceStore = defineStore('finance', () => {
     try {
       const newAccount = await accountsAPI.create(account);
       accounts.value.push(newAccount);
+      // Refresh subscription info to update account count
+      await fetchSubscriptionInfo();
       return newAccount;
-    } catch (error) {
+    } catch (error: any) {
+      // Check if it's a subscription limit error
+      if (error?.response?.data?.detail?.type === 'subscription_limit_error') {
+        const limitError: SubscriptionLimitError = {
+          type: 'subscription_limit_error',
+          message: error.response.data.detail.message
+        };
+        throw limitError;
+      }
       console.error('Failed to create account:', error);
       throw error;
     }
@@ -98,6 +121,8 @@ export const useFinanceStore = defineStore('finance', () => {
     try {
       await accountsAPI.delete(id);
       accounts.value = accounts.value.filter(a => a.id !== id);
+      // Refresh subscription info to update account count
+      await fetchSubscriptionInfo();
     } catch (error) {
       console.error('Failed to delete account:', error);
       throw error;
@@ -118,6 +143,15 @@ export const useFinanceStore = defineStore('finance', () => {
     }
   };
   
+  // Subscription
+  const fetchSubscriptionInfo = async () => {
+    try {
+      subscriptionInfo.value = await subscriptionAPI.getInfo();
+    } catch (error) {
+      console.error('Failed to fetch subscription info:', error);
+    }
+  };
+
   // Manual analytics refresh for bulk operations
   const refreshAnalytics = async () => {
     await fetchAnalytics();
@@ -128,6 +162,7 @@ export const useFinanceStore = defineStore('finance', () => {
     accounts,
     expenseSummary,
     accountFlow,
+    subscriptionInfo,
     loading,
     fetchTransactions,
     createTransaction,
@@ -138,6 +173,7 @@ export const useFinanceStore = defineStore('finance', () => {
     updateAccount,
     deleteAccount,
     fetchAnalytics,
-    refreshAnalytics
+    refreshAnalytics,
+    fetchSubscriptionInfo
   };
 });

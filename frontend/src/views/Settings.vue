@@ -24,6 +24,7 @@
           >
             <option value="security">Security</option>
             <option value="profile">Profile</option>
+            <option value="subscription">Subscription</option>
           </select>
         </div>
         <div class="hidden sm:block">
@@ -49,6 +50,17 @@
               ]"
             >
               Profile
+            </button>
+            <button
+              @click="activeTab = 'subscription'"
+              :class="[
+                activeTab === 'subscription'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
+              ]"
+            >
+              Subscription
             </button>
           </nav>
         </div>
@@ -101,6 +113,11 @@
           </div>
         </div>
 
+        <!-- Subscription Tab -->
+        <div v-if="activeTab === 'subscription'">
+          <SubscriptionManager />
+        </div>
+
         <!-- Profile Tab -->
         <div v-if="activeTab === 'profile'" class="space-y-6">
           <!-- User Information -->
@@ -139,6 +156,7 @@
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import PasswordChangeForm from '@/components/PasswordChangeForm.vue';
+import SubscriptionManager from '@/components/SubscriptionManager.vue';
 
 const authStore = useAuthStore();
 const activeTab = ref('security');

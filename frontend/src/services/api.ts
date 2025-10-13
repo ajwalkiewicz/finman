@@ -4,6 +4,8 @@ import type {
   AuthResponse,
   ExchangeRatesResponse,
   ExpenseSummary,
+  SubscriptionInfo,
+  SubscriptionLimits,
   Transaction,
   User,
 } from "@/types";
@@ -139,6 +141,26 @@ export const analyticsAPI = {
 
   getAccountFlow: async (): Promise<AccountFlow> => {
     const response = await api.get("/analytics/accounts");
+    return response.data;
+  },
+};
+
+// Subscription API
+export const subscriptionAPI = {
+  getInfo: async (): Promise<SubscriptionInfo> => {
+    const response = await api.get("/subscription/");
+    return response.data;
+  },
+
+  updateSubscription: async (subscriptionType: string): Promise<User> => {
+    const response = await api.put("/subscription/", {
+      subscription_type: subscriptionType,
+    });
+    return response.data;
+  },
+
+  getLimits: async (): Promise<SubscriptionLimits> => {
+    const response = await api.get("/subscription/limits");
     return response.data;
   },
 };

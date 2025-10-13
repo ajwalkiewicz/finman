@@ -101,7 +101,7 @@ def create_user_income_expense_accounts(db: Session, user_id: int):
     existing_accounts = crud.get_accounts(db, user_id)
     existing_names = {acc.name for acc in existing_accounts}
 
-    # Create Income account if it doesn't exist
+    # Create Income account if it doesn't exist (bypass limits for system accounts)
     if "Income" not in existing_names:
         income_account = schemas.AccountCreate(
             name="Income",
@@ -109,10 +109,10 @@ def create_user_income_expense_accounts(db: Session, user_id: int):
             base_currency="PLN",
             label_color="#10B981",  # Green color: bg-green-100 text-green-800 equivalent
         )
-        crud.create_account(db, income_account, user_id)
+        crud.create_account(db, income_account, user_id, bypass_limits=True)
         print(f"Created Income account for user {user_id}")
 
-    # Create Expense account if it doesn't exist
+    # Create Expense account if it doesn't exist (bypass limits for system accounts)
     if "Expense" not in existing_names:
         expense_account = schemas.AccountCreate(
             name="Expense",
@@ -120,5 +120,5 @@ def create_user_income_expense_accounts(db: Session, user_id: int):
             base_currency="PLN",
             label_color="#EF4444",  # Red color: bg-red-100 text-red-800 equivalent
         )
-        crud.create_account(db, expense_account, user_id)
+        crud.create_account(db, expense_account, user_id, bypass_limits=True)
         print(f"Created Expense account for user {user_id}")

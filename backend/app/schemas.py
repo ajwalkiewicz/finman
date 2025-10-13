@@ -53,6 +53,7 @@ class PasswordChange(BaseModel):
 class User(BaseModel):
     username: str
     id: int
+    subscription_type: str
     created_at: datetime
 
     class Config:
@@ -122,3 +123,26 @@ class ExpenseSummary(BaseModel):
     total_expense_usd: float
     total_expense_gtq: float
     by_category: dict
+
+
+class SubscriptionInfo(BaseModel):
+    subscription_type: str
+    max_transactions: int
+    current_transactions: int
+    max_accounts: int
+    current_accounts: int
+    subscription_name: str
+    can_add_transaction: bool
+    can_add_account: bool
+
+
+class SubscriptionUpdate(BaseModel):
+    subscription_type: str
+
+    @field_validator("subscription_type")
+    @classmethod
+    def validate_subscription_type(cls, v: str) -> str:
+        """Validate subscription type is valid."""
+        if v not in ["free", "plus", "pro"]:
+            raise ValueError("Subscription type must be one of: free, plus, pro")
+        return v

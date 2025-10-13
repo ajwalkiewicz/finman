@@ -30,6 +30,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    subscription_type = Column(String, default="free")  # free, plus, pro
     created_at = Column(DateTime, default=datetime.utcnow)
 
     transactions = relationship("Transaction", back_populates="owner")
@@ -82,6 +83,19 @@ def get_session():
 
 def create_tables():
     Base.metadata.create_all(bind=engine)
+
+
+# Subscription limits configuration
+SUBSCRIPTION_LIMITS = {
+    "free": {"max_transactions": 10, "max_accounts": 5, "name": "Free"},
+    "plus": {"max_transactions": 50, "max_accounts": 15, "name": "Plus"},
+    "pro": {"max_transactions": 150, "max_accounts": 50, "name": "Pro"},
+}
+
+
+def get_subscription_limits(subscription_type: str) -> dict:
+    """Get the limits for a specific subscription type."""
+    return SUBSCRIPTION_LIMITS.get(subscription_type, SUBSCRIPTION_LIMITS["free"])
 
 
 def setup_database():

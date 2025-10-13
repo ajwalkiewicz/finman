@@ -200,9 +200,16 @@ def create_transaction(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
-    return crud.create_transaction(
-        db=db, transaction=transaction, user_id=current_user.id
-    )
+    try:
+        user_id = getattr(current_user, "id")
+        return crud.create_transaction(db=db, transaction=transaction, user_id=user_id)
+    except ValueError as e:
+        if "Transaction limit reached" in str(e):
+            raise HTTPException(
+                status_code=403,
+                detail={"type": "subscription_limit_error", "message": str(e)},
+            )
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/transactions/", response_model=list[schemas.Transaction])
@@ -212,9 +219,8 @@ def read_transactions(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
-    transactions = crud.get_transactions(
-        db, user_id=current_user.id, skip=skip, limit=limit
-    )
+    user_id = getattr(current_user, "id")
+    transactions = crud.get_transactions(db, user_id=user_id, skip=skip, limit=limit)
     return transactions
 
 
@@ -224,8 +230,9 @@ def read_transaction(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
+    user_id = getattr(current_user, "id")
     transaction = crud.get_transaction(
-        db, transaction_id=transaction_id, user_id=current_user.id
+        db, transaction_id=transaction_id, user_id=user_id
     )
     if transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -239,11 +246,12 @@ def update_transaction(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
+    user_id = getattr(current_user, "id")
     db_transaction = crud.update_transaction(
         db=db,
         transaction_id=transaction_id,
         transaction=transaction,
-        user_id=current_user.id,
+        user_id=user_id,
     )
     if db_transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -256,8 +264,9 @@ def delete_transaction(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
+    user_id = getattr(current_user, "id")
     db_transaction = crud.delete_transaction(
-        db=db, transaction_id=transaction_id, user_id=current_user.id
+        db=db, transaction_id=transaction_id, user_id=user_id
     )
     if db_transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -270,7 +279,8 @@ def read_accounts(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
-    return crud.get_accounts(db, user_id=current_user.id)
+    user_id = getattr(current_user, "id")
+    return crud.get_accounts(db, user_id=user_id)
 
 
 @app.post("/accounts/", response_model=schemas.Account)
@@ -279,7 +289,16 @@ def create_account(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
-    return crud.create_account(db=db, account=account, user_id=current_user.id)
+    try:
+        user_id = getattr(current_user, "id")
+        return crud.create_account(db=db, account=account, user_id=user_id)
+    except ValueError as e:
+        if "Account limit reached" in str(e):
+            raise HTTPException(
+                status_code=403,
+                detail={"type": "subscription_limit_error", "message": str(e)},
+            )
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.put("/accounts/{account_id}", response_model=schemas.Account)
@@ -289,8 +308,9 @@ def update_account(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
+    user_id = getattr(current_user, "id")
     db_account = crud.update_account(
-        db=db, account_id=account_id, account=account, user_id=current_user.id
+        db=db, account_id=account_id, account=account, user_id=user_id
     )
     if db_account is None:
         raise HTTPException(status_code=404, detail="Account not found")
@@ -303,9 +323,8 @@ def delete_account(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
-    db_account = crud.delete_account(
-        db=db, account_id=account_id, user_id=current_user.id
-    )
+    user_id = getattr(current_user, "id")
+    db_account = crud.delete_account(db=db, account_id=account_id, user_id=user_id)
     if db_account is None:
         raise HTTPException(status_code=404, detail="Account not found")
     return {"message": "Account deleted successfully"}
@@ -317,7 +336,8 @@ def get_expense_summary(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
-    return crud.get_expense_summary(db, user_id=current_user.id)
+    user_id = getattr(current_user, "id")
+    return crud.get_expense_summary(db, user_id=user_id)
 
 
 @app.get("/analytics/accounts")
@@ -325,7 +345,41 @@ def get_account_flow(
     db: Session = Depends(database.get_session),
     current_user: database.User = Depends(auth.get_current_user),
 ):
-    return crud.get_accounts_with_transactions(db, user_id=current_user.id)
+    user_id = getattr(current_user, "id")
+    return crud.get_accounts_with_transactions(db, user_id=user_id)
+
+
+# Subscription endpoints
+@app.get("/subscription/", response_model=schemas.SubscriptionInfo)
+def get_subscription_info(
+    db: Session = Depends(database.get_session),
+    current_user: database.User = Depends(auth.get_current_user),
+):
+    """Get current user's subscription information."""
+    user_id = getattr(current_user, "id")
+    return crud.get_subscription_info(db, user_id=user_id)
+
+
+@app.put("/subscription/", response_model=schemas.User)
+def update_subscription(
+    subscription_update: schemas.SubscriptionUpdate,
+    db: Session = Depends(database.get_session),
+    current_user: database.User = Depends(auth.get_current_user),
+):
+    """Update user's subscription type."""
+    user_id = getattr(current_user, "id")
+    updated_user = crud.update_user_subscription(
+        db, user_id=user_id, subscription_type=subscription_update.subscription_type
+    )
+    if updated_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return updated_user
+
+
+@app.get("/subscription/limits")
+def get_subscription_limits():
+    """Get all available subscription types and their limits."""
+    return database.SUBSCRIPTION_LIMITS
 
 
 if __name__ == "__main__":

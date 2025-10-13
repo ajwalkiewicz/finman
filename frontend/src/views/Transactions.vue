@@ -7,10 +7,55 @@
           <h1 class="text-2xl font-bold text-gray-900">Transactions</h1>
           <button
             @click="showModal = true"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+            :disabled="!subscriptionInfo?.can_add_transaction"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white"
+            :class="subscriptionInfo?.can_add_transaction ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-400 cursor-not-allowed'"
           >
             Add Transaction
           </button>
+        </div>
+
+        <!-- Subscription Status Warning -->
+        <div v-if="subscriptionInfo && !subscriptionInfo.can_add_transaction" 
+             class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-red-800">Transaction Limit Reached</h3>
+              <p class="text-sm text-red-700 mt-1">
+                You've used {{ subscriptionInfo.current_transactions }} of {{ subscriptionInfo.max_transactions }} 
+                transactions allowed in your {{ subscriptionInfo.subscription_name }} plan. 
+                <router-link to="/settings" class="font-medium underline hover:text-red-900">
+                  Upgrade your subscription
+                </router-link> to add more transactions.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="subscriptionInfo && subscriptionInfo.current_transactions >= subscriptionInfo.max_transactions * 0.8" 
+             class="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-yellow-800">Approaching Transaction Limit</h3>
+              <p class="text-sm text-yellow-700 mt-1">
+                You've used {{ subscriptionInfo.current_transactions }} of {{ subscriptionInfo.max_transactions }} 
+                transactions. Consider 
+                <router-link to="/settings" class="font-medium underline hover:text-yellow-900">
+                  upgrading your subscription
+                </router-link> to avoid hitting the limit.
+              </p>
+            </div>
+          </div>
         </div>
 
         <!-- Transaction List -->
@@ -438,6 +483,7 @@ import { useFinanceStore } from '@/stores/finance';
 import type { Transaction } from '@/types';
 
 const financeStore = useFinanceStore();
+const subscriptionInfo = computed(() => financeStore.subscriptionInfo);
 
 const showModal = ref(false);
 const editingTransaction = ref<Transaction | null>(null);
@@ -637,8 +683,14 @@ const handleSubmit = async () => {
     }
     closeModal();
     // Note: No need to refetch transactions/accounts as the store updates them automatically
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to save transaction:', error);
+    // Handle subscription limit error
+    if (error?.type === 'subscription_limit_error') {
+      alert(`Transaction Limit Reached: ${error.message}`);
+    } else {
+      alert('Failed to save transaction. Please try again.');
+    }
   } finally {
     submitting.value = false;
   }
@@ -871,8 +923,13 @@ const importFromCSV = async () => {
           await financeStore.createTransaction(transactionData);
           importedCount++;
           
-        } catch (error) {
-          errors.push(`Row ${rowIndex + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } catch (error: any) {
+          // Handle subscription limit error specifically
+          if (error?.type === 'subscription_limit_error') {
+            errors.push(`Row ${rowIndex + 2}: Transaction limit reached - ${error.message}`);
+          } else {
+            errors.push(`Row ${rowIndex + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
           errorCount++;
         }
       });
@@ -953,10 +1010,11 @@ const exportToCSV = () => {
 };
 
 onMounted(async () => {
-  // Only fetch transactions and accounts - analytics will be loaded when needed
+  // Fetch transactions, accounts and subscription info
   await Promise.all([
     financeStore.fetchTransactions(),
-    financeStore.fetchAccounts()
+    financeStore.fetchAccounts(),
+    financeStore.fetchSubscriptionInfo()
   ]);
 });
 </script>

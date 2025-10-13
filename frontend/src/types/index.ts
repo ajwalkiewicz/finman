@@ -25,6 +25,7 @@ export interface Account {
 export interface User {
   id: number;
   username: string;
+  subscription_type: string;
   created_at: string;
 }
 
@@ -60,4 +61,38 @@ export interface ExchangeRatesResponse {
   rates: {
     [currency: string]: number;
   };
+}
+
+export interface SubscriptionInfo {
+  subscription_type: string;
+  max_transactions: number;
+  current_transactions: number;
+  max_accounts: number;
+  current_accounts: number;
+  subscription_name: string;
+  can_add_transaction: boolean;
+  can_add_account: boolean;
+}
+
+export interface SubscriptionLimits {
+  free: {
+    max_transactions: number;
+    max_accounts: number;
+    name: string;
+  };
+  plus: {
+    max_transactions: number;
+    max_accounts: number;
+    name: string;
+  };
+  pro: {
+    max_transactions: number;
+    max_accounts: number;
+    name: string;
+  };
+}
+
+export interface SubscriptionLimitError {
+  type: 'subscription_limit_error';
+  message: string;
 }

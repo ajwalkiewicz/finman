@@ -69,6 +69,20 @@ def change_user_password(
 def create_transaction(
     db: Session, transaction: schemas.TransactionCreate, user_id: int
 ):
+    # Check subscription limits before creating transaction
+    user = get_user(db, user_id)
+    if not user:
+        raise ValueError("User not found")
+
+    current_transaction_count = get_transaction_count(db, user_id)
+    user_subscription = getattr(user, "subscription_type", "free")
+    limits = database.get_subscription_limits(user_subscription)
+
+    if current_transaction_count >= limits["max_transactions"]:
+        raise ValueError(
+            f"Transaction limit reached for {limits['name']} subscription. Maximum allowed: {limits['max_transactions']}"
+        )
+
     # Determine if this is an expense (not a transfer between accounts)
     is_expense = (
         "false"
@@ -83,6 +97,25 @@ def create_transaction(
     db.commit()
     db.refresh(db_transaction)
     return db_transaction
+
+
+def get_transaction_count(db: Session, user_id: int) -> int:
+    """Get the total number of transactions for a user."""
+    return (
+        db.query(database.Transaction)
+        .filter(database.Transaction.owner_id == user_id)
+        .count()
+    )
+
+
+def get_account_count(db: Session, user_id: int) -> int:
+    """Get the total number of accounts for a user, excluding system accounts (Income/Expense)."""
+    return (
+        db.query(database.Account)
+        .filter(database.Account.owner_id == user_id)
+        .filter(database.Account.name.notin_(["Income", "Expense"]))
+        .count()
+    )
 
 
 def get_transactions(db: Session, user_id: int, skip: int = 0, limit: int = 100):
@@ -123,7 +156,7 @@ def update_transaction(
 
         for key, value in transaction.dict().items():
             setattr(db_transaction, key, value)
-        db_transaction.is_expense = is_expense
+        setattr(db_transaction, "is_expense", is_expense)
         db.commit()
         db.refresh(db_transaction)
     return db_transaction
@@ -141,7 +174,27 @@ def get_accounts(db: Session, user_id: int):
     return db.query(database.Account).filter(database.Account.owner_id == user_id).all()
 
 
-def create_account(db: Session, account: schemas.AccountCreate, user_id: int):
+def create_account(
+    db: Session,
+    account: schemas.AccountCreate,
+    user_id: int,
+    bypass_limits: bool = False,
+):
+    # Check subscription limits before creating account (unless bypassing for system accounts)
+    if not bypass_limits and account.name not in ["Income", "Expense"]:
+        user = get_user(db, user_id)
+        if not user:
+            raise ValueError("User not found")
+
+        current_account_count = get_account_count(db, user_id)
+        user_subscription = getattr(user, "subscription_type", "free")
+        limits = database.get_subscription_limits(user_subscription)
+
+        if current_account_count >= limits["max_accounts"]:
+            raise ValueError(
+                f"Account limit reached for {limits['name']} subscription. Maximum allowed: {limits['max_accounts']}"
+            )
+
     db_account = database.Account(**account.dict(), owner_id=user_id)
     db.add(db_account)
     db.commit()
@@ -242,3 +295,39 @@ def get_accounts_with_transactions(db: Session, user_id: int):
             accounts[destination]["incoming"] += transaction.amount
 
     return accounts
+
+
+def get_subscription_info(db: Session, user_id: int) -> schemas.SubscriptionInfo:
+    """Get subscription information for a user."""
+    user = get_user(db, user_id)
+    if not user:
+        raise ValueError("User not found")
+
+    current_transactions = get_transaction_count(db, user_id)
+    current_accounts = get_account_count(db, user_id)
+    user_subscription = getattr(user, "subscription_type", "free")
+    limits = database.get_subscription_limits(user_subscription)
+
+    return schemas.SubscriptionInfo(
+        subscription_type=user_subscription,
+        max_transactions=limits["max_transactions"],
+        current_transactions=current_transactions,
+        max_accounts=limits["max_accounts"],
+        current_accounts=current_accounts,
+        subscription_name=limits["name"],
+        can_add_transaction=current_transactions < limits["max_transactions"],
+        can_add_account=current_accounts < limits["max_accounts"],
+    )
+
+
+def update_user_subscription(db: Session, user_id: int, subscription_type: str):
+    """Update user's subscription type."""
+    user = get_user(db, user_id)
+    if not user:
+        return None
+
+    # Update the subscription type using setattr to avoid typing issues
+    setattr(user, "subscription_type", subscription_type)
+    db.commit()
+    db.refresh(user)
+    return user
