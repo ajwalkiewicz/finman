@@ -22,8 +22,16 @@
                 v-model="username"
                 type="text"
                 required
-                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                :class="[
+                  'appearance-none block w-full px-3 py-2 border rounded-md placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm',
+                  !isLogin && usernameError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                ]"
+                @blur="validateUsername"
+                @input="validateUsername"
               />
+              <div v-if="!isLogin && usernameError" class="mt-1 text-sm text-red-600">
+                {{ usernameError }}
+              </div>
             </div>
           </div>
 
@@ -51,6 +59,7 @@
                 :show-strength-meter="true"
                 :show-requirements="true"
                 :error="passwordError"
+                :username="username"
                 @validation-change="onPasswordValidationChange"
                 required
               />
@@ -72,7 +81,7 @@
           <div>
             <button
               type="submit"
-              :disabled="loading || (!isLogin && !isPasswordValid)"
+              :disabled="loading || (!isLogin && (!isPasswordValid || !isUsernameValid))"
               class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ loading ? 'Loading...' : (isLogin ? 'Sign in' : 'Register') }}
@@ -114,12 +123,43 @@ const loading = ref(false);
 const error = ref<string | any>('');
 const passwordError = ref('');
 const isPasswordValid = ref(false);
+const usernameError = ref('');
+const isUsernameValid = ref(false);
+
+const validateUsername = () => {
+  if (isLogin.value) {
+    usernameError.value = '';
+    isUsernameValid.value = true;
+    return;
+  }
+
+  const usernameRegex = /^[a-zA-Z_]{6,}$/;
+  if (!username.value) {
+    usernameError.value = 'Username is required';
+    isUsernameValid.value = false;
+  } else if (!usernameRegex.test(username.value)) {
+    usernameError.value = 'Username must be at least 6 characters long and contain only English letters (a-z, A-Z) and underscores';
+    isUsernameValid.value = false;
+  } else {
+    usernameError.value = '';
+    isUsernameValid.value = true;
+  }
+  
+  // Revalidate password when username changes
+  if (!isLogin.value && password.value) {
+    // Force password revalidation by triggering the computed property
+    // This will be handled automatically by the PasswordStrengthInput component
+    // when the username prop changes
+  }
+};
 
 const toggleMode = () => {
   isLogin.value = !isLogin.value;
   error.value = '';
   passwordError.value = '';
+  usernameError.value = '';
   password.value = '';
+  validateUsername();
 };
 
 const onPasswordValidationChange = (valid: boolean) => {

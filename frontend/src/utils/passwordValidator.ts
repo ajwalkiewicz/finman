@@ -49,7 +49,7 @@ export class PasswordValidator {
   /**
    * Validate password and return detailed results
    */
-  static validatePassword(password: string): PasswordValidationResult {
+  static validatePassword(password: string, username: string = ""): PasswordValidationResult {
     const requirements: PasswordRequirement[] = [
       {
         text: `At least ${this.MIN_LENGTH} characters long`,
@@ -86,6 +86,14 @@ export class PasswordValidator {
         isValid: !this.containsSimpleSequence(password),
       },
     ];
+
+    // Add username validation if username is provided
+    if (username && username.length >= 3) {
+      requirements.push({
+        text: "Does not contain the username",
+        isValid: !password.toLowerCase().includes(username.toLowerCase()),
+      });
+    }
 
     const validCount = requirements.filter((req) => req.isValid).length;
     const isValid = validCount === requirements.length;

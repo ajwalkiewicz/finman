@@ -40,6 +40,7 @@
                 :show-strength-meter="true"
                 :show-requirements="true"
                 :error="passwordError"
+                :username="currentUsername"
                 @validation-change="onPasswordValidationChange"
                 required
               />
@@ -112,7 +113,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { authAPI } from '@/services/api';
+import { useAuthStore } from '@/stores/auth';
 import PasswordStrengthInput from '@/components/PasswordStrengthInput.vue';
+
+const authStore = useAuthStore();
 
 const currentPassword = ref('');
 const newPassword = ref('');
@@ -122,6 +126,8 @@ const error = ref<string | any>('');
 const successMessage = ref('');
 const passwordError = ref('');
 const isPasswordValid = ref(false);
+
+const currentUsername = computed(() => authStore.user?.username || '');
 
 const canSubmit = computed(() => {
   return (

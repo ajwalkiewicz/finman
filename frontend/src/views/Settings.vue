@@ -85,6 +85,9 @@
                       <div class="mt-2 text-sm text-blue-700">
                         <ul class="list-disc list-inside space-y-1">
                           <li>Use a strong, unique password for your account</li>
+                          <li>Password must be at least 8 characters with uppercase, lowercase, digit, and special character</li>
+                          <li>Password cannot contain your username</li>
+                          <li>Username must be at least 6 characters (letters and underscores only)</li>
                           <li>Don't share your login credentials with anyone</li>
                           <li>Log out from shared computers</li>
                           <li>Change your password regularly</li>
@@ -113,6 +116,9 @@
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Username</label>
                   <div class="mt-1 text-sm text-gray-900">{{ user?.username || 'Loading...' }}</div>
+                  <div class="mt-1 text-xs text-gray-500">
+                    Username requirements: minimum 6 characters, English letters (a-z, A-Z) and underscores only
+                  </div>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Account Created</label>

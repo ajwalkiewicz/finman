@@ -25,6 +25,9 @@ class PasswordValidator:
     - At least one digit
     - At least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)
     - No common passwords
+    - No more than 3 consecutive identical characters
+    - No simple sequences (like '1234' or 'abcd')
+    - Cannot contain the username
     """
 
     MIN_LENGTH = 8
@@ -61,12 +64,15 @@ class PasswordValidator:
     }
 
     @classmethod
-    def validate_password(cls, password: str) -> Tuple[bool, List[str]]:
+    def validate_password(
+        cls, password: str, username: str = ""
+    ) -> Tuple[bool, List[str]]:
         """
         Validate a password against all requirements.
 
         Args:
             password: The password to validate
+            username: The username to check against (password cannot contain username)
 
         Returns:
             Tuple of (is_valid, error_messages)
@@ -112,6 +118,10 @@ class PasswordValidator:
                 "Password cannot contain simple sequences like '1234' or 'abcd'"
             )
 
+        # Check if password contains username
+        if username and len(username) >= 3 and username.lower() in password.lower():
+            errors.append("Password cannot contain the username")
+
         return len(errors) == 0, errors
 
     @classmethod
@@ -137,17 +147,18 @@ class PasswordValidator:
         return False
 
     @classmethod
-    def validate_and_raise(cls, password: str) -> None:
+    def validate_and_raise(cls, password: str, username: str = "") -> None:
         """
         Validate password and raise PasswordValidationError if invalid.
 
         Args:
             password: The password to validate
+            username: The username to check against (password cannot contain username)
 
         Raises:
             PasswordValidationError: If password doesn't meet requirements
         """
-        is_valid, errors = cls.validate_password(password)
+        is_valid, errors = cls.validate_password(password, username)
         if not is_valid:
             raise PasswordValidationError(errors)
 
@@ -163,5 +174,6 @@ class PasswordValidator:
             f"• At least one special character ({cls.SPECIAL_CHARACTERS})\n"
             f"• Cannot be a common password\n"
             f"• Cannot contain more than 3 consecutive identical characters\n"
-            f"• Cannot contain simple sequences (like '1234' or 'abcd')"
+            f"• Cannot contain simple sequences (like '1234' or 'abcd')\n"
+            f"• Cannot contain the username"
         )

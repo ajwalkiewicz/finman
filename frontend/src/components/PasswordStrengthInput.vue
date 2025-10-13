@@ -130,6 +130,7 @@ interface Props {
   showRequirements?: boolean;
   inputId?: string;
   error?: string;
+  username?: string;
 }
 
 interface Emits {
@@ -151,7 +152,7 @@ const internalValue = ref(props.modelValue);
 const showPassword = ref(false);
 
 const validationResult = computed<PasswordValidationResult>(() => {
-  return PasswordValidator.validatePassword(internalValue.value);
+  return PasswordValidator.validatePassword(internalValue.value, props.username || '');
 });
 
 const strengthLabel = computed(() => {

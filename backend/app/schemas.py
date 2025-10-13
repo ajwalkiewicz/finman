@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from typing import Optional
 
@@ -10,14 +11,29 @@ class UserBase(BaseModel):
     username: str
 
 
-class UserCreate(UserBase):
+class UserCreate(BaseModel):
+    username: str
     password: str
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        """Validate username meets requirements for new accounts."""
+        if not re.match(r"^[a-zA-Z_]{6,}$", v):
+            raise ValueError(
+                "Username must be at least 6 characters long and contain only English letters (a-z, A-Z) and underscores"
+            )
+        return v
 
     @field_validator("password")
     @classmethod
-    def validate_password_strength(cls, v: str) -> str:
+    def validate_password_strength(cls, v: str, info) -> str:
         """Validate password meets security requirements."""
-        PasswordValidator.validate_and_raise(v)
+        # Get username from the model data
+        username = info.data.get("username", "")
+
+        # Validate password strength
+        PasswordValidator.validate_and_raise(v, username)
         return v
 
 
@@ -33,7 +49,8 @@ class PasswordChange(BaseModel):
         return v
 
 
-class User(UserBase):
+class User(BaseModel):
+    username: str
     id: int
     created_at: datetime
 

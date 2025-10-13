@@ -5,7 +5,7 @@ from datetime import timedelta
 
 import redis.asyncio as redis
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_limiter import FastAPILimiter
@@ -19,7 +19,7 @@ from .password_validator import PasswordValidationError, PasswordValidator
 # Lifespan event to create database and tables
 # This function runs when the application starts and before it shuts down.
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(app: FastAPI):
     logging.info("Starting up and setting up the database...")
 
     # Initialize Redis for rate limiting
@@ -34,6 +34,14 @@ async def lifespan(_: FastAPI):
     database.create_tables()
     database.setup_database()
 
+    # Security
+    environment = os.getenv("ENVIRONMENT", "development")
+    if environment == "production":
+        # In production, disable docs and openapi
+        app.docs_url = None
+        app.redoc_url = None
+        app.openapi_url = None
+
     yield
 
     await FastAPILimiter.close()
@@ -47,10 +55,27 @@ app = FastAPI(
     dependencies=[
         Depends(RateLimiter(times=100, seconds=60))
     ],  # Rate limit: 100 requests per minute
-    docs_url=None,  # Disables Swagger UI at /docs
-    redoc_url=None,  # Disables ReDoc at /redoc
-    openapi_url=None,  # Disables OpenAPI JSON at /openapi.json
 )
+
+
+# Exception handler for password validation errors
+@app.exception_handler(PasswordValidationError)
+async def password_validation_exception_handler(
+    request: Request, exc: PasswordValidationError
+):
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": {
+                "type": "password_validation_error",
+                "message": "Password validation failed",
+                "requirements": exc.messages,
+            }
+        },
+    )
+
 
 # Configure CORS
 app.add_middleware(
@@ -81,6 +106,7 @@ def get_password_requirements():
             "Cannot be a common password",
             "Cannot contain more than 3 consecutive identical characters",
             "Cannot contain simple sequences (like '1234' or 'abcd')",
+            "Cannot contain the username",
         ],
     }
 
@@ -137,6 +163,13 @@ async def change_password(
 ):
     """Change the current user's password."""
     try:
+        # Validate new password doesn't contain username
+        from .password_validator import PasswordValidator
+
+        PasswordValidator.validate_and_raise(
+            password_data.new_password, current_user.username
+        )
+
         success = crud.change_user_password(
             db,
             current_user.id,
