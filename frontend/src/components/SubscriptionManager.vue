@@ -150,10 +150,10 @@
     <!-- Subscription Plans -->
     <div v-if="subscriptionLimits" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <div v-for="(plan, key) in subscriptionLimits" :key="key"
-           class="bg-white rounded-lg shadow p-6 border-2 transition-colors duration-200"
+           class="bg-white rounded-lg shadow p-6 border-2 transition-colors duration-200 flex flex-col h-full"
            :class="subscriptionInfo?.subscription_type === key ? 'border-blue-500' : 'border-gray-200 hover:border-gray-300'">
         
-        <div class="text-center">
+        <div class="text-center flex-1 flex flex-col">
           <h4 class="text-lg font-semibold text-gray-900 mb-2">{{ plan.name }}</h4>
           <div class="text-sm text-gray-600 mb-4 space-y-1">
             <p>Up to {{ plan.max_transactions }} transactions</p>
@@ -161,27 +161,29 @@
           </div>
           
           <!-- Features -->
-          <div class="mb-6">
-            <ul class="text-sm text-gray-600 space-y-1">
-              <li>{{ plan.max_transactions }} transactions</li>
-              <li>{{ plan.max_accounts }} accounts</li>
-              <li v-if="key !== 'free'">Priority support</li>
+          <div class="mb-6 flex-1">
+            <ul class="text-sm text-gray-600 space-y-1 min-h-[3rem] flex flex-col justify-center">
+              <li v-if="key === 'free'" class="text-gray-400">Basic features</li>
+              <li v-if="key === 'plus'">Advanced analytics</li>
               <li v-if="key === 'pro'">Advanced analytics</li>
+              <li v-if="key === 'pro'">Priority support</li>
             </ul>
           </div>
           
-          <!-- Action Button -->
-          <button v-if="subscriptionInfo?.subscription_type !== key"
-                  @click="upgradeSubscription(key as string)"
-                  :disabled="updating"
-                  class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200">
-            <span v-if="updating">Updating...</span>
-            <span v-else-if="key === 'free'">Downgrade to Free</span>
-            <span v-else>Upgrade to {{ plan.name }}</span>
-          </button>
-          
-          <div v-else class="w-full bg-green-100 text-green-800 font-medium py-2 px-4 rounded-md">
-            Current Plan
+          <!-- Action Button - Always at bottom -->
+          <div class="mt-auto">
+            <button v-if="subscriptionInfo?.subscription_type !== key"
+                    @click="upgradeSubscription(key as string)"
+                    :disabled="updating"
+                    class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200">
+              <span v-if="updating">Updating...</span>
+              <span v-else-if="key === 'free'">Downgrade to Free</span>
+              <span v-else>Upgrade to {{ plan.name }}</span>
+            </button>
+            
+            <div v-else class="w-full bg-green-100 text-green-800 font-medium py-2 px-4 rounded-md text-center">
+              Current Plan
+            </div>
           </div>
         </div>
       </div>
