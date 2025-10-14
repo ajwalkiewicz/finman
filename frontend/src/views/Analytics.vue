@@ -156,6 +156,55 @@
           </div>
         </div>
 
+        <!-- Total Balance Overview -->
+        <div class="bg-white shadow sm:rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+              <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2 sm:mb-0">Total Balance</h3>
+              <div class="text-right">
+                <div class="text-2xl font-bold" :class="totalBalanceData.totalBalance >= 0 ? 'text-green-600' : 'text-red-600'">
+                  {{ formatCurrency(totalBalanceData.totalBalance, totalBalanceData.baseCurrency) }}
+                </div>
+                <div class="text-sm text-gray-500">Across all accounts in {{ totalBalanceData.baseCurrency }}</div>
+              </div>
+            </div>
+            
+            <!-- Account Breakdown -->
+            <div v-if="totalBalanceData.balancesByAccount.length > 0" class="border-t border-gray-200 pt-4">
+              <h4 class="text-sm font-medium text-gray-900 mb-3">Account Breakdown</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div
+                  v-for="account in totalBalanceData.balancesByAccount"
+                  :key="account.name"
+                  class="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div 
+                        class="w-3 h-3 rounded-full mr-2 flex-shrink-0"
+                        :style="{ backgroundColor: account.labelColor }"
+                      ></div>
+                      <span class="text-sm font-medium text-gray-900 truncate">{{ account.name }}</span>
+                    </div>
+                    <div class="text-right ml-2">
+                      <div class="text-sm font-semibold" :class="account.balance >= 0 ? 'text-green-600' : 'text-red-600'">
+                        {{ formatCurrency(account.balance, account.currency) }}
+                      </div>
+                      <div v-if="account.currency !== totalBalanceData.baseCurrency" class="text-xs text-gray-500">
+                        ≈ {{ formatCurrency(account.balanceInBaseCurrency, totalBalanceData.baseCurrency) }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div v-else class="border-t border-gray-200 pt-4 text-center text-gray-500">
+              <p>No account balances to display</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Premium Features Notice for Free Plan Users -->
         <div v-if="!hasChartsAccess" class="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-6">
           <div class="flex items-center">
@@ -200,111 +249,27 @@
                 </div>
               </div>
               
-              <!-- Chart Container -->
-              <div class="relative h-80 bg-gray-50 rounded-lg p-4 overflow-hidden mb-2">
-                <!-- Y-axis labels -->
-                <div class="absolute left-0 top-4 h-64 flex flex-col justify-between text-xs text-gray-800 font-semibold">
-                  <span class="bg-white px-1 rounded shadow-sm">{{ formatCurrency(cashFlowData.maxBalance, 'PLN') }}</span>
-                  <span class="bg-white px-1 rounded shadow-sm">{{ formatCurrency((cashFlowData.maxBalance + cashFlowData.minBalance) / 2, 'PLN') }}</span>
-                  <span class="bg-white px-1 rounded shadow-sm">{{ formatCurrency(cashFlowData.minBalance, 'PLN') }}</span>
-                </div>
-                
-                <!-- Chart area -->
-                <div class="ml-16 mr-4 h-64 relative">
-                  <!-- Zero line -->
-                  <div 
-                    v-if="cashFlowData.minBalance < 0 && cashFlowData.maxBalance > 0"
-                    class="absolute w-full border-t border-gray-400 border-dashed"
-                    :style="{ bottom: getZeroLinePosition(cashFlowData) + '%' }"
-                  ></div>
-                  
-                  <!-- Balance line chart -->
-                  <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <!-- Background grid -->
-                    <defs>
-                      <pattern id="cashflow-grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#e5e7eb" stroke-width="0.5"/>
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#cashflow-grid)" />
-                    
-                    <!-- Positive area (above zero) -->
-                    <path
-                      :d="getCashFlowAreaPath(cashFlowData.dailyBalances, cashFlowData.minBalance, cashFlowData.maxBalance, true)"
-                      fill="rgba(34, 197, 94, 0.2)"
-                      stroke="none"
-                    />
-                    
-                    <!-- Negative area (below zero) -->
-                    <path
-                      :d="getCashFlowAreaPath(cashFlowData.dailyBalances, cashFlowData.minBalance, cashFlowData.maxBalance, false)"
-                      fill="rgba(239, 68, 68, 0.2)"
-                      stroke="none"
-                    />
-                    
-                    <!-- Balance line -->
-                    <path
-                      :d="getLinePath(cashFlowData.dailyBalances, cashFlowData.minBalance, cashFlowData.maxBalance)"
-                      fill="none"
-                      stroke="#6366f1"
-                      stroke-width="1.2"
-                      vector-effect="non-scaling-stroke"
-                    />
-                    
-                    <!-- Data points -->
-                    <circle
-                      v-for="(point, index) in cashFlowData.dailyBalances"
-                      :key="index"
-                      :cx="(point.day / 31) * 100"
-                      :cy="100 - ((point.balance - cashFlowData.minBalance) / (cashFlowData.maxBalance - cashFlowData.minBalance)) * 100"
-                      r="1.5"
-                      :fill="point.balance >= 0 ? '#22c55e' : '#ef4444'"
-                      vector-effect="non-scaling-stroke"
-                    />
-                  </svg>
-                </div>
-              </div>
-              
-              <!-- X-axis labels - Closer to the chart -->
-              <div class="ml-16 mr-4 mb-4">
-                <div class="flex justify-between text-base text-gray-900 font-bold border-t border-gray-300 pt-1">
-                  <span class="bg-gray-100 px-2 py-1 rounded">1</span>
-                  <span class="bg-gray-100 px-2 py-1 rounded">5</span>
-                  <span class="bg-gray-100 px-2 py-1 rounded">10</span>
-                  <span class="bg-gray-100 px-2 py-1 rounded">15</span>
-                  <span class="bg-gray-100 px-2 py-1 rounded">20</span>
-                  <span class="bg-gray-100 px-2 py-1 rounded">25</span>
-                  <span class="bg-gray-100 px-2 py-1 rounded">31</span>
-                </div>
-                <div class="text-center text-sm text-gray-700 mt-1 font-semibold">
-                  Days of Month
-                </div>
-              </div>
-              
-              <!-- Cash flow summary -->
-              <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                <div class="text-center p-3 bg-green-50 rounded-lg">
-                  <div class="text-green-600 font-medium">Total Income</div>
-                  <div class="text-green-800 font-semibold">{{ formatCurrency(cashFlowData.totalIncome, 'PLN') }}</div>
-                </div>
-                <div class="text-center p-3 bg-red-50 rounded-lg">
-                  <div class="text-red-600 font-medium">Total Expenses</div>
-                  <div class="text-red-800 font-semibold">{{ formatCurrency(cashFlowData.totalExpenses, 'PLN') }}</div>
-                </div>
-                <div class="text-center p-3 bg-blue-50 rounded-lg">
-                  <div class="text-blue-600 font-medium">Net Cash Flow</div>
-                  <div class="text-blue-800 font-semibold" :class="cashFlowData.netFlow >= 0 ? 'text-green-800' : 'text-red-800'">
-                    {{ cashFlowData.netFlow >= 0 ? '+' : '' }}{{ formatCurrency(cashFlowData.netFlow, 'PLN') }}
+              <!-- Chart.js Chart Container -->
+              <div class="h-80 bg-gray-50 rounded-lg p-4">
+                <Line
+                  v-if="cashFlowChartData.datasets.length > 0"
+                  :key="`cash-flow-${cashFlowData.dailyBalances.length}`"
+                  :data="cashFlowChartData"
+                  :options="cashFlowChartOptions"
+                />
+                <div v-else class="flex items-center justify-center h-full text-gray-500">
+                  <div class="text-center">
+                    <p class="text-lg">No chart data available</p>
+                    <p class="text-sm">Chart access: {{ hasChartsAccess }}</p>
+                    <p class="text-sm">Data points: {{ cashFlowData.dailyBalances.length }}</p>
                   </div>
-                </div>
-                <div class="text-center p-3 bg-gray-50 rounded-lg">
-                  <div class="text-gray-600 font-medium">Transactions</div>
-                  <div class="text-gray-800 font-semibold">{{ cashFlowData.transactionCount }}</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+                
+                        </div>
 
         <!-- Account Balance Charts -->
         <div v-if="hasChartsAccess && accountBalanceData.length > 0" class="bg-white shadow sm:rounded-lg">
@@ -327,94 +292,28 @@
                   </div>
                 </div>
                 
-                <!-- Chart Container -->
-                <div class="relative h-80 bg-gray-50 rounded-lg p-4 overflow-hidden mb-2">
-                  <!-- Y-axis labels -->
-                  <div class="absolute left-0 top-4 h-64 flex flex-col justify-between text-xs text-gray-800 font-semibold">
-                    <span class="bg-white px-1 rounded shadow-sm">{{ formatCurrency(account.maxBalance, account.baseCurrency) }}</span>
-                    <span class="bg-white px-1 rounded shadow-sm">{{ formatCurrency((account.maxBalance + account.minBalance) / 2, account.baseCurrency) }}</span>
-                    <span class="bg-white px-1 rounded shadow-sm">{{ formatCurrency(account.minBalance, account.baseCurrency) }}</span>
-                  </div>
-                  
-                  <!-- Chart area -->
-                  <div class="ml-16 mr-4 h-64 relative">
-                    <!-- Zero line -->
-                    <div 
-                      v-if="account.minBalance < 0 && account.maxBalance > 0"
-                      class="absolute w-full border-t border-gray-400 border-dashed"
-                      :style="{ bottom: getZeroLinePosition(account) + '%' }"
-                    ></div>
-                    
-                    <!-- Balance line chart -->
-                    <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                      <!-- Background grid -->
-                      <defs>
-                        <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                          <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#e5e7eb" stroke-width="0.5"/>
-                        </pattern>
-                      </defs>
-                      <rect width="100%" height="100%" fill="url(#grid)" />
-                      
-                      <!-- Balance area -->
-                      <path
-                        :d="getAreaPath(account.dailyBalances, account.minBalance, account.maxBalance)"
-                        fill="rgba(59, 130, 246, 0.1)"
-                        stroke="none"
-                      />
-                      
-                      <!-- Balance line -->
-                      <path
-                        :d="getLinePath(account.dailyBalances, account.minBalance, account.maxBalance)"
-                        fill="none"
-                        stroke="#3b82f6"
-                        stroke-width="0.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      
-                      <!-- Data points -->
-                      <circle
-                        v-for="(point, index) in account.dailyBalances"
-                        :key="index"
-                        :cx="(point.day / 31) * 100"
-                        :cy="100 - ((point.balance - account.minBalance) / (account.maxBalance - account.minBalance)) * 100"
-                        r="1"
-                        fill="#3b82f6"
-                        vector-effect="non-scaling-stroke"
-                      />
-                    </svg>
-                  </div>
-                </div>
-                
-                <!-- X-axis labels - Closer to the chart -->
-                <div class="ml-16 mr-4 mb-4">
-                  <div class="flex justify-between text-base text-gray-900 font-bold border-t border-gray-300 pt-1">
-                    <span class="bg-gray-100 px-2 py-1 rounded">1</span>
-                    <span class="bg-gray-100 px-2 py-1 rounded">5</span>
-                    <span class="bg-gray-100 px-2 py-1 rounded">10</span>
-                    <span class="bg-gray-100 px-2 py-1 rounded">15</span>
-                    <span class="bg-gray-100 px-2 py-1 rounded">20</span>
-                    <span class="bg-gray-100 px-2 py-1 rounded">25</span>
-                    <span class="bg-gray-100 px-2 py-1 rounded">31</span>
-                  </div>
-                  <div class="text-center text-sm text-gray-700 mt-1 font-semibold">
-                    Days of Month
-                  </div>
+                <!-- Chart.js Chart Container -->
+                <div class="h-80 bg-gray-50 rounded-lg p-4">
+                  <Line
+                    :data="getAccountChartData(account)"
+                    :options="getAccountChartOptions(account)"
+                  />
                 </div>
                 
                 <!-- Account summary -->
                 <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                   <div class="text-center p-3 bg-green-50 rounded-lg">
                     <div class="text-green-600 font-medium">Total In</div>
-                    <div class="text-green-800 font-semibold">{{ formatCurrency(account.totalIncoming, 'PLN') }}</div>
+                    <div class="text-green-800 font-semibold">{{ formatCurrency(account.totalIncoming, account.baseCurrency) }}</div>
                   </div>
                   <div class="text-center p-3 bg-red-50 rounded-lg">
                     <div class="text-red-600 font-medium">Total Out</div>
-                    <div class="text-red-800 font-semibold">{{ formatCurrency(account.totalOutgoing, 'PLN') }}</div>
+                    <div class="text-red-800 font-semibold">{{ formatCurrency(account.totalOutgoing, account.baseCurrency) }}</div>
                   </div>
                   <div class="text-center p-3 bg-blue-50 rounded-lg">
                     <div class="text-blue-600 font-medium">Net Flow</div>
                     <div class="text-blue-800 font-semibold" :class="account.netFlow >= 0 ? 'text-green-800' : 'text-red-800'">
-                      {{ account.netFlow >= 0 ? '+' : '' }}{{ formatCurrency(account.netFlow, 'PLN') }}
+                      {{ account.netFlow >= 0 ? '+' : '' }}{{ formatCurrency(account.netFlow, account.baseCurrency) }}
                     </div>
                   </div>
                   <div class="text-center p-3 bg-gray-50 rounded-lg">
@@ -431,7 +330,6 @@
         <div v-if="!financeStore.expenseSummary && accountBalanceData.length === 0 && cashFlowData.transactionCount === 0" class="text-center py-12">
           <p class="text-gray-500">No data available for analysis. Add some transactions to get started.</p>
         </div>
-      </div>
     </main>
 </template>
 
@@ -440,6 +338,30 @@ import { computed, onMounted, ref } from 'vue';
 import { useFinanceStore } from '@/stores/finance';
 import { exchangeRatesAPI } from '@/services/api';
 import type { ExchangeRatesResponse } from '@/types';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { Line } from 'vue-chartjs';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 const financeStore = useFinanceStore();
 
@@ -453,6 +375,21 @@ const hasChartsAccess = computed(() => {
   if (!subscription) return false;
   return subscription.subscription_name !== 'Free';
 });
+
+// Currency conversion function
+const convertAmount = (amount: number, fromCurrency: string, toCurrency: string): number => {
+  if (!exchangeRates.value || fromCurrency === toCurrency) {
+    return amount;
+  }
+  
+  const rates = exchangeRates.value.rates;
+  const fromRate = rates[fromCurrency] || 1;
+  const toRate = rates[toCurrency] || 1;
+  
+  // Convert to base currency (PLN) first, then to target currency
+  const amountInPLN = amount / fromRate;
+  return amountInPLN * toRate;
+};
 
 const sortedCategories = computed(() => {
   if (!financeStore.expenseSummary) return {};
@@ -556,20 +493,64 @@ const accountBalanceData = computed(() => {
   }).filter(account => account.transactionCount > 0); // Only show accounts with transactions
 });
 
-// Currency conversion function
-const convertAmount = (amount: number, fromCurrency: string, toCurrency: string): number => {
-  if (!exchangeRates.value || fromCurrency === toCurrency) {
-    return amount;
+// Total balance calculation across all accounts
+const totalBalanceData = computed(() => {
+  const accounts = financeStore.accounts;
+  const transactions = financeStore.transactions;
+  
+  if (!accounts.length || !transactions.length) {
+    return {
+      totalBalance: 0,
+      balancesByAccount: [],
+      baseCurrency: baseCurrency.value
+    };
   }
   
-  const rates = exchangeRates.value.rates;
-  const fromRate = rates[fromCurrency] || 1;
-  const toRate = rates[toCurrency] || 1;
+  // Calculate current balance for each account in the selected base currency
+  const balancesByAccount = accounts.filter(account => 
+    account.name !== 'Income' && account.name !== 'Expense'
+  ).map(account => {
+    const accountBaseCurrency = account.base_currency || 'PLN';
+    
+    // Calculate the current balance for this account
+    let currentBalance = 0;
+    transactions.forEach(transaction => {
+      if (!transaction.currency || typeof transaction.amount !== 'number') {
+        return;
+      }
+      
+      const convertedAmount = convertAmount(transaction.amount, transaction.currency, accountBaseCurrency);
+      
+      if (transaction.destination_account === account.name) {
+        currentBalance += convertedAmount;
+      }
+      if (transaction.origin_account === account.name) {
+        currentBalance -= convertedAmount;
+      }
+    });
+    
+    // Convert account balance to the selected base currency for total calculation
+    const balanceInBaseCurrency = convertAmount(currentBalance, accountBaseCurrency, baseCurrency.value);
+    
+    return {
+      name: account.name,
+      balance: currentBalance,
+      currency: accountBaseCurrency,
+      balanceInBaseCurrency,
+      labelColor: account.label_color || '#3B82F6'
+    };
+  });
   
-  // Convert to base currency (PLN) first, then to target currency
-  const amountInPLN = amount / fromRate;
-  return amountInPLN * toRate;
-};
+  const totalBalance = balancesByAccount.reduce((sum, account) => sum + account.balanceInBaseCurrency, 0);
+  
+  return {
+    totalBalance,
+    balancesByAccount: balancesByAccount.filter(account => Math.abs(account.balance) > 0.01), // Only show accounts with non-zero balances
+    baseCurrency: baseCurrency.value
+  };
+});
+
+
 
 // Cash flow data computation (Income vs Expense)
 const cashFlowData = computed(() => {
@@ -705,102 +686,172 @@ const formatTimestamp = (timestamp: number) => {
   });
 };
 
-// Chart helper functions
-const getZeroLinePosition = (account: any) => {
-  if (account.minBalance >= 0) return 0;
-  if (account.maxBalance <= 0) return 100;
-  
-  const range = account.maxBalance - account.minBalance;
-  return (Math.abs(account.minBalance) / range) * 100;
-};
+// Chart.js configuration for cash flow chart
+const cashFlowChartData = computed(() => {
+  if (!hasChartsAccess.value || !cashFlowData.value.dailyBalances.length) {
+    console.log('No access or no data:', { hasAccess: hasChartsAccess.value, dataLength: cashFlowData.value.dailyBalances.length });
+    return {
+      labels: [],
+      datasets: []
+    };
+  }
 
-const getLinePath = (dailyBalances: { day: number; balance: number }[], minBalance: number, maxBalance: number) => {
-  if (dailyBalances.length === 0) return '';
+  const labels = cashFlowData.value.dailyBalances.map(d => `Day ${d.day}`);
+  const data = cashFlowData.value.dailyBalances.map(d => d.balance);
   
-  const range = maxBalance - minBalance || 1; // Prevent division by zero
-  
-  const pathPoints = dailyBalances.map(point => {
-    const x = (point.day / 31) * 100;
-    const y = 100 - ((point.balance - minBalance) / range) * 100;
-    return `${x},${y}`;
-  });
-  
-  return `M ${pathPoints.join(' L ')}`;
-};
+  console.log('Chart data:', { labels: labels.slice(0, 5), data: data.slice(0, 5), hasChartsAccess: hasChartsAccess.value });
 
-const getAreaPath = (dailyBalances: { day: number; balance: number }[], minBalance: number, maxBalance: number) => {
-  if (dailyBalances.length === 0) return '';
-  
-  const range = maxBalance - minBalance || 1;
-  const zeroY = 100 - ((0 - minBalance) / range) * 100;
-  
-  const pathPoints = dailyBalances.map(point => {
-    const x = (point.day / 31) * 100;
-    const y = 100 - ((point.balance - minBalance) / range) * 100;
-    return `${x},${y}`;
-  });
-  
-  // Create area path: start from first point, draw line, then close to zero line
-  const firstX = (dailyBalances[0].day / 31) * 100;
-  const lastX = (dailyBalances[dailyBalances.length - 1].day / 31) * 100;
-  
-  return `M ${firstX},${zeroY} L ${pathPoints.join(' L ')} L ${lastX},${zeroY} Z`;
-};
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'Cash Flow Balance',
+        data,
+        borderColor: 'rgb(99, 102, 241)',
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: 'rgb(99, 102, 241)',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+      }
+    ]
+  };
+});
 
-const getCashFlowAreaPath = (dailyBalances: { day: number; balance: number }[], minBalance: number, maxBalance: number, positive: boolean) => {
-  if (dailyBalances.length === 0) return '';
-  
-  const range = maxBalance - minBalance || 1;
-  const zeroY = 100 - ((0 - minBalance) / range) * 100;
-  
-  // Filter points based on whether we want positive or negative area
-  const relevantPoints = dailyBalances.filter(point => positive ? point.balance >= 0 : point.balance < 0);
-  
-  if (relevantPoints.length === 0) return '';
-  
-  // Build path for the relevant area
-  let path = '';
-  let currentSegment: { day: number; balance: number }[] = [];
-  
-  for (let i = 0; i < dailyBalances.length; i++) {
-    const point = dailyBalances[i];
-    const isRelevant = positive ? point.balance >= 0 : point.balance < 0;
-    
-    if (isRelevant) {
-      currentSegment.push(point);
-    } else {
-      // End current segment if it exists
-      if (currentSegment.length > 0) {
-        path += buildSegmentPath(currentSegment, minBalance, maxBalance, zeroY);
-        currentSegment = [];
+const cashFlowChartOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      mode: 'index' as const,
+      intersect: false,
+      callbacks: {
+        label: (context: any) => {
+          const value = context.parsed.y;
+          return `Balance: ${formatCurrency(value, 'PLN')}`;
+        }
+      }
+    },
+  },
+  scales: {
+    x: {
+      title: {
+        display: true,
+        text: 'Days of Month'
+      },
+      grid: {
+        display: true,
+        color: 'rgba(229, 231, 235, 0.5)'
+      }
+    },
+    y: {
+      title: {
+        display: true,
+        text: 'Balance (PLN)'
+      },
+      grid: {
+        display: true,
+        color: 'rgba(229, 231, 235, 0.5)'
+      },
+      ticks: {
+        callback: (value: any) => formatCurrency(value, 'PLN')
       }
     }
+  },
+  elements: {
+    line: {
+      borderWidth: 2,
+    },
+    point: {
+      radius: 3,
+      hoverRadius: 6,
+    }
   }
-  
-  // Handle final segment
-  if (currentSegment.length > 0) {
-    path += buildSegmentPath(currentSegment, minBalance, maxBalance, zeroY);
-  }
-  
-  return path;
+}));
+
+// Chart.js configuration for individual account charts
+const getAccountChartData = (account: any) => {
+  const labels = account.dailyBalances.map((d: any) => `Day ${d.day}`);
+  const data = account.dailyBalances.map((d: any) => d.balance);
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: `${account.name} Balance`,
+        data,
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        fill: 'origin',
+        tension: 0.3,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        pointBackgroundColor: 'rgb(59, 130, 246)',
+      }
+    ]
+  };
 };
 
-const buildSegmentPath = (segment: { day: number; balance: number }[], minBalance: number, maxBalance: number, zeroY: number) => {
-  if (segment.length === 0) return '';
-  
-  const range = maxBalance - minBalance || 1;
-  
-  const pathPoints = segment.map(point => {
-    const x = (point.day / 31) * 100;
-    const y = 100 - ((point.balance - minBalance) / range) * 100;
-    return `${x},${y}`;
-  });
-  
-  const firstX = (segment[0].day / 31) * 100;
-  const lastX = (segment[segment.length - 1].day / 31) * 100;
-  
-  return `M ${firstX},${zeroY} L ${pathPoints.join(' L ')} L ${lastX},${zeroY} Z `;
-};
+const getAccountChartOptions = (account: any) => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    title: {
+      display: false,
+    },
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      mode: 'index' as const,
+      intersect: false,
+      callbacks: {
+        label: (context: any) => {
+          const value = context.parsed.y;
+          return `Balance: ${formatCurrency(value, account.baseCurrency)}`;
+        }
+      }
+    },
+  },
+  scales: {
+    x: {
+      title: {
+        display: true,
+        text: 'Days of Month'
+      },
+      grid: {
+        display: true,
+        color: 'rgba(229, 231, 235, 0.5)'
+      }
+    },
+    y: {
+      title: {
+        display: true,
+        text: `Balance (${account.baseCurrency})`
+      },
+      grid: {
+        display: true,
+        color: 'rgba(229, 231, 235, 0.5)'
+      },
+      ticks: {
+        callback: (value: any) => formatCurrency(value, account.baseCurrency)
+      }
+    }
+  },
+  interaction: {
+    mode: 'nearest' as const,
+    axis: 'x' as const,
+    intersect: false
+  }
+});
+
+// Initialize and fetch data
 
 onMounted(async () => {
   await Promise.all([
