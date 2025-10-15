@@ -1,25 +1,5 @@
 {
-  "[html]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-    "editor.indentSize": "tabSize",
-    "editor.tabSize": 2,
-    "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "explicit",
-      "source.organizeImports": "explicit"
-    },
-  },
-  "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-    "editor.indentSize": "tabSize",
-    "editor.tabSize": 2,
-    "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "explicit",
-      "source.organizeImports": "explicit"
-    },
-  },
-  "[typescript]": {
+  "[html,typescript,javascript,vue]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
     "editor.indentSize": "tabSize",
@@ -80,5 +60,6 @@
       "addWords": true,
       "scope": "workspace"
     }
-  }
+  },
+  "makefile.configureOnOpen": false
 }
