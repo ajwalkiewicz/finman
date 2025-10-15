@@ -268,8 +268,6 @@
             </div>
           </div>
         </div>
-                
-                        </div>
 
         <!-- Account Balance Charts -->
         <div v-if="hasChartsAccess && accountBalanceData.length > 0" class="bg-white shadow sm:rounded-lg">
@@ -330,6 +328,7 @@
         <div v-if="!financeStore.expenseSummary && accountBalanceData.length === 0 && cashFlowData.transactionCount === 0" class="text-center py-12">
           <p class="text-gray-500">No data available for analysis. Add some transactions to get started.</p>
         </div>
+      </div>
     </main>
 </template>
 
