@@ -301,6 +301,14 @@ The application automatically imports data from `data.csv` on startup if no tran
 - [x] Account color customization
 
 ### 🎯 Short-term Goals
+- [ ] **Security Fixes** (Critical Priority)
+  - [ ] Fix environment variable configuration (SECRET_KEY loading)
+  - [ ] Implement input sanitization for XSS protection
+  - [ ] Disable API documentation in production environment
+  - [ ] Fix frontend container to run as non-root user
+  - [ ] Implement token blacklisting on password change
+  - [ ] Strengthen Content Security Policy headers
+  - [ ] Fix user enumeration in registration responses
 - [ ] User management scripts (add/remove/update users)
 - [ ] Toast notifications system
 - [ ] Admin panel development
