@@ -65,6 +65,11 @@ export const authAPI = {
     const response = await api.get("/password-requirements");
     return response.data;
   },
+
+  getRegistrationStatus: async (): Promise<{ enabled: boolean }> => {
+    const response = await api.get("/registration-status");
+    return response.data;
+  },
 };
 
 // Transactions API

@@ -92,6 +92,13 @@ app.add_middleware(
 
 
 # Authentication endpoints
+@app.get("/registration-status")
+def get_registration_status():
+    """Check if user registration is enabled."""
+    user_registration_enabled = os.getenv("USER_REGISTRATION", "true").lower() == "true"
+    return {"enabled": user_registration_enabled}
+
+
 @app.get("/password-requirements")
 def get_password_requirements():
     """Get password requirements for the frontend to display."""
@@ -132,6 +139,13 @@ async def login_for_access_token(
 
 @app.post("/register", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(database.get_session)):
+    # Check if user registration is disabled
+    user_registration_enabled = os.getenv("USER_REGISTRATION", "true").lower() == "true"
+    if not user_registration_enabled:
+        raise HTTPException(
+            status_code=403, detail="User registration is currently disabled"
+        )
+
     db_user = crud.get_user_by_username(db, username=user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")

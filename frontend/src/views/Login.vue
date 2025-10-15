@@ -7,6 +7,9 @@
       <p class="mt-2 text-center text-sm text-gray-600">
         {{ isLogin ? 'Sign in to your account' : 'Create a new account' }}
       </p>
+      <div v-if="!registrationEnabled && !isLogin" class="mt-2 text-center text-sm text-yellow-600 bg-yellow-50 border border-yellow-200 rounded px-3 py-2">
+        Registration is currently disabled. Please contact an administrator.
+      </div>
     </div>
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -67,7 +70,7 @@
           </div>
 
           <div class="flex items-center justify-between">
-            <div class="text-sm">
+            <div class="text-sm" v-if="registrationEnabled">
               <button
                 type="button"
                 @click="toggleMode"
@@ -108,9 +111,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { authAPI } from '@/services/api';
 import PasswordStrengthInput from '@/components/PasswordStrengthInput.vue';
 
 const router = useRouter();
@@ -125,6 +129,19 @@ const passwordError = ref('');
 const isPasswordValid = ref(false);
 const usernameError = ref('');
 const isUsernameValid = ref(false);
+const registrationEnabled = ref(true);
+
+// Check registration status on component mount
+onMounted(async () => {
+  try {
+    const status = await authAPI.getRegistrationStatus();
+    registrationEnabled.value = status.enabled;
+  } catch (err) {
+    console.error('Failed to fetch registration status:', err);
+    // Default to enabled if the endpoint fails
+    registrationEnabled.value = true;
+  }
+});
 
 const validateUsername = () => {
   if (isLogin.value) {
@@ -154,12 +171,15 @@ const validateUsername = () => {
 };
 
 const toggleMode = () => {
-  isLogin.value = !isLogin.value;
-  error.value = '';
-  passwordError.value = '';
-  usernameError.value = '';
-  password.value = '';
-  validateUsername();
+  // Don't allow switching to register mode if registration is disabled
+  if (!isLogin.value || registrationEnabled.value) {
+    isLogin.value = !isLogin.value;
+    error.value = '';
+    passwordError.value = '';
+    usernameError.value = '';
+    password.value = '';
+    validateUsername();
+  }
 };
 
 const onPasswordValidationChange = (valid: boolean) => {
@@ -179,6 +199,11 @@ const handleSubmit = async () => {
     if (isLogin.value) {
       success = await authStore.login(username.value, password.value);
     } else {
+      // Double-check registration is enabled before attempting
+      if (!registrationEnabled.value) {
+        error.value = 'User registration is currently disabled';
+        return;
+      }
       success = await authStore.register(username.value, password.value);
     }
 

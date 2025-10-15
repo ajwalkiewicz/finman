@@ -2,7 +2,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8010:8000"  # Fixed: backend runs on port 8000 internally
+      - "8010:8000"
     volumes:
       - ./data:/app/data
       - redis_data:/data
@@ -12,9 +12,10 @@ services:
       - ALGORITHM=${ALGORITHM:-HS256}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       - DATABASE_URL=${DATABASE_URL:-sqlite:////app/data/finance_manager.db}
-      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
+      - USER_REGISTRATION=${USER_REGISTRATION:-false}
     depends_on:
       - redis
     restart: unless-stopped
@@ -27,7 +28,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"  # Fixed: frontend nginx runs on port 80 internally
+      - "3000:80"
     networks:
       - dev-net
     restart: unless-stopped
