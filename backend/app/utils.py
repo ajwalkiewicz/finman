@@ -6,8 +6,18 @@ from . import crud, schemas
 
 
 def import_csv_data(db: Session, csv_file_path: str, user_id: int):
-    """Import data from CSV file into the database"""
+    """Import data from CSV file into the database
 
+    Warning:
+        This function is used only for development and testing purposes.
+        It is not intended for production use.
+
+    - This function assumes the CSV file has a header row with specific columns.
+    - It creates "Income" and "Expense" accounts if they don't exist.
+    - It maps transactions to these accounts based on the origin and destination fields.
+    - It handles malformed amounts like "55,99,PLN" by extracting the numeric part.
+    - It skips rows with parsing errors and continues processing the rest.
+    """
     # Create Income and Expense accounts for this user if they don't exist
     create_user_income_expense_accounts(db, user_id)
     accounts_created = {"Income", "Expense"}

@@ -1,4 +1,11 @@
 #!/bin/bash
+##############################################################################
+# Deprecated: Use `docker-compose up` or `make start` instead for easier     #
+# management of services.                                                    #
+##############################################################################
+# This script starts the proxy server, backend, and frontend for the Finance 
+# Manager application. It also ensures that any existing instances of these 
+# services are terminated before starting new ones.
 
 echo "Starting Finance Manager Application..."
 

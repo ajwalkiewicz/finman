@@ -1,6 +1,8 @@
 # Finance Manager
 
-A comprehensive finance management application for tracking cyclic transactions, expenses, and money flow between accounts. Built with FastAPI backend and Vue 3 frontend, featuring multi-currency support and detailed analytics.
+A comprehensive finance management application for tracking cyclic transactions, 
+expenses, and money flow between accounts. Built with FastAPI backend and Vue 3
+frontend, featuring multi-currency support and detailed analytics.
 
 ## ✨ Features
 
@@ -44,7 +46,7 @@ A comprehensive finance management application for tracking cyclic transactions,
 
 ### Prerequisites
 - **Docker and Docker Compose** (recommended for easy setup)
-- **OR** Python 3.8+ and Node.js 16+ for local development
+- **OR** Python 3.10+ and Node.js 16+ for local development
 
 ### 🐳 Quick Start with Docker Compose (Recommended)
 
@@ -70,7 +72,7 @@ A comprehensive finance management application for tracking cyclic transactions,
    - 🌐 **Frontend**: http://localhost:3000
    - 🔧 **Backend API**: http://localhost:8010
    - 💱 **Exchange Rate Proxy**: http://localhost:8012
-   - 📚 **API Documentation**: http://localhost:8010/docs
+   - 📚 **API Documentation**: http://localhost:8010/docs (if enabled)
 
 5. **Manage services**:
    ```bash
@@ -81,15 +83,15 @@ A comprehensive finance management application for tracking cyclic transactions,
 
 ### 🛠️ Available Make Commands
 
-| Command | Description |
-|---------|-------------|
-| `make build` | Build Docker images |
-| `make start` | Start all services |
-| `make stop` | Stop all services |
-| `make restart` | Restart services |
-| `make logs` | View service logs |
-| `make status` | Check service status |
-| `make clean` | Stop and remove all containers and volumes |
+| Command        | Description                                |
+|----------------|--------------------------------------------|
+| `make build`   | Build Docker images                        |
+| `make start`   | Start all services                         |
+| `make stop`    | Stop all services                          |
+| `make restart` | Restart services                           |
+| `make logs`    | View service logs                          |
+| `make status`  | Check service status                       |
+| `make clean`   | Stop and remove all containers and volumes |
 
 ### 💻 Local Development Setup (Alternative)
 
@@ -116,7 +118,7 @@ A comprehensive finance management application for tracking cyclic transactions,
    python run.py
    ```
 
-   🌐 API available at: `http://localhost:8000`
+   🌐 API available at: http://localhost:8000
 
 #### Frontend Setup
 
@@ -135,7 +137,33 @@ A comprehensive finance management application for tracking cyclic transactions,
    npm run dev
    ```
 
-   🌐 Frontend available at: `http://localhost:3000`
+   🌐 Frontend available at: http://localhost:3000
+
+### API and Secret Key
+
+For proper and secure work, application requires secure key and Fixer API for
+fetching current currencies rates.
+
+> ⚠️ **WARNING**
+>
+> Store all environmental variables in `.env.` file to avoid accidentally 
+> publishing them
+
+#### Secret Key
+
+To generate secret key run following command:
+
+```bash
+openssl rand -hex 32
+```
+
+Use it's output as a key for `SECRET_KEY` environmental variable.
+
+#### Fixer API
+
+1. Register in Fixer page: https://fixer.io/
+2. Copy your API access key and store it in `FIXER_API_KEY` environmental variable.
+
 
 ## 🔐 Authentication & Security
 
@@ -172,49 +200,49 @@ User registration can be controlled using the `USER_REGISTRATION` environment va
 ## 🔌 API Endpoints
 
 ### 🔐 Authentication & User Management
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/registration-status` | Check if user registration is enabled |
-| `GET` | `/password-requirements` | Get password requirements for frontend |
-| `POST` | `/token` | Login and get access token |
-| `POST` | `/register` | Register new user (if enabled) |
-| `GET` | `/users/me` | Get current user information |
-| `PUT` | `/users/me/password` | Change current user's password |
+| Method | Endpoint                 | Description                            |
+|--------|--------------------------|----------------------------------------|
+| `GET`  | `/registration-status`   | Check if user registration is enabled  |
+| `GET`  | `/password-requirements` | Get password requirements for frontend |
+| `POST` | `/token`                 | Login and get access token             |
+| `POST` | `/register`              | Register new user (if enabled)         |
+| `GET`  | `/users/me`              | Get current user information           |
+| `PUT`  | `/users/me/password`     | Change current user's password         |
 
 ### 💰 Transactions
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/transactions/` | List all transactions (with pagination) |
-| `POST` | `/transactions/` | Create new transaction |
-| `GET` | `/transactions/{transaction_id}` | Get specific transaction |
-| `PUT` | `/transactions/{transaction_id}` | Update transaction |
-| `DELETE` | `/transactions/{transaction_id}` | Delete transaction |
+| Method   | Endpoint                         | Description                             |
+|----------|----------------------------------|-----------------------------------------|
+| `GET`    | `/transactions/`                 | List all transactions (with pagination) |
+| `POST`   | `/transactions/`                 | Create new transaction                  |
+| `GET`    | `/transactions/{transaction_id}` | Get specific transaction                |
+| `PUT`    | `/transactions/{transaction_id}` | Update transaction                      |
+| `DELETE` | `/transactions/{transaction_id}` | Delete transaction                      |
 
 ### 🏦 Accounts
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/accounts/` | List all user accounts |
-| `POST` | `/accounts/` | Create new account |
-| `PUT` | `/accounts/{account_id}` | Update account |
-| `DELETE` | `/accounts/{account_id}` | Delete account |
+| Method   | Endpoint                 | Description            |
+|----------|--------------------------|------------------------|
+| `GET`    | `/accounts/`             | List all user accounts |
+| `POST`   | `/accounts/`             | Create new account     |
+| `PUT`    | `/accounts/{account_id}` | Update account         |
+| `DELETE` | `/accounts/{account_id}` | Delete account         |
 
 ### 📊 Analytics
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/analytics/expenses` | Get expense summary by currency |
-| `GET` | `/analytics/accounts` | Get account flow analysis with transactions |
+| Method | Endpoint              | Description                                 |
+|--------|-----------------------|---------------------------------------------|
+| `GET`  | `/analytics/expenses` | Get expense summary by currency             |
+| `GET`  | `/analytics/accounts` | Get account flow analysis with transactions |
 
 ### 💳 Subscription Management
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/subscription/` | Get current user's subscription information |
-| `PUT` | `/subscription/` | Update user's subscription type |
-| `GET` | `/subscription/limits` | Get all subscription types and their limits |
+| Method | Endpoint               | Description                                 |
+|--------|------------------------|---------------------------------------------|
+| `GET`  | `/subscription/`       | Get current user's subscription information |
+| `PUT`  | `/subscription/`       | Update user's subscription type             |
+| `GET`  | `/subscription/limits` | Get all subscription types and their limits |
 
 ### 📚 API Documentation
-- **Swagger UI**: `http://localhost:8010/docs` (disabled in production)
-- **ReDoc**: `http://localhost:8010/redoc` (disabled in production)
-- **OpenAPI Schema**: `http://localhost:8010/openapi.json` (disabled in production)
+- **Swagger UI**: http://localhost:8010/docs (disabled in production)
+- **ReDoc**: http://localhost:8010/redoc (disabled in production)
+- **OpenAPI Schema**: http://localhost:8010/openapi.json (disabled in production)
 
 ### 🛡️ Rate Limiting
 - **Global Rate Limit**: 100 requests per minute per IP
@@ -223,18 +251,19 @@ User registration can be controlled using the `USER_REGISTRATION` environment va
 ## 📊 Data Management
 
 ### 📤 Data Import
-The application automatically imports data from `data.csv` on startup if no transactions exist. 
+
+Application can import CSV data from the file. CSV must follow below format:
 
 **CSV Format**:
-| Column | Description | Required |
-|--------|-------------|----------|
-| `title` | Transaction title | ✅ |
-| `origin_account` | Source account name | ❌ |
-| `destination_account` | Target account name | ❌ |
-| `amount` | Transaction amount | ✅ |
-| `currency` | Currency code (PLN/EUR/USD/GTQ) | ✅ |
-| `day_of_month` | Day of month (1-31) | ✅ |
-| `description` | Additional details | ❌ |
+| Column                | Description                     | Required |
+|-----------------------|---------------------------------|----------|
+| `title`               | Transaction title               | ✅       |
+| `origin_account`      | Source account name             | ❌       |
+| `destination_account` | Target account name             | ❌       |
+| `amount`              | Transaction amount              | ✅       |
+| `currency`            | Currency code (PLN/EUR/USD/GTQ) | ✅       |
+| `day_of_month`        | Day of month (1-31)             | ✅       |
+| `description`         | Additional details              | ❌       |
 
 ### 💡 Transaction Types
 - **💸 Expenses**: Transactions without a destination account
@@ -266,8 +295,8 @@ The application automatically imports data from `data.csv` on startup if no tran
 ### Backend Development
 - Built with **FastAPI** for high-performance API development
 - Automatic API documentation available at:
-  - **Swagger UI**: `http://localhost:8000/docs`
-  - **ReDoc**: `http://localhost:8000/redoc`
+  - **Swagger UI**: http://localhost:8000/docs
+  - **ReDoc**: http://localhost:8000/redoc
 - SQLAlchemy ORM for database operations
 - Pydantic for data validation and serialization
 
@@ -299,43 +328,46 @@ The application automatically imports data from `data.csv` on startup if no tran
 - [x] User subscription types (free/plus/pro)
 - [x] Mobile-responsive design
 - [x] Account color customization
+- [x] Money flow graphs for individual accounts
 
 ### 🎯 Short-term Goals
 - [ ] **Security Fixes** (Critical Priority)
-  - [ ] Fix environment variable configuration (SECRET_KEY loading)
+  - [x] Fix environment variable configuration (SECRET_KEY loading)
+  - [x] Disable API documentation in production environment
   - [ ] Implement input sanitization for XSS protection
-  - [ ] Disable API documentation in production environment
   - [ ] Fix frontend container to run as non-root user
   - [ ] Implement token blacklisting on password change
   - [ ] Strengthen Content Security Policy headers
   - [ ] Fix user enumeration in registration responses
-- [ ] User management scripts (add/remove/update users)
+- [ ] Investigate if rate limiting works correctly behind nginx
+      i.e. If it blocks right IP address, not all of them.
 - [ ] Toast notifications system
 - [ ] Admin panel development
 - [ ] Enhanced backup mechanisms
 
 ### 🔮 Long-term Vision
+- [ ] Exchange rate caching with invalidation periods
 - [ ] Refactor frontend components for better reusability
 - [ ] Migration from SQLAlchemy to SQLModel
 - [ ] UV-based project management
 - [ ] PostgreSQL database migration
-- [ ] Money flow graphs for individual accounts
 - [ ] Interactive transaction visualizations
 - [ ] Database encryption
 - [ ] Email notification system
 - [ ] GDPR compliance modal
 - [ ] Cookie consent management
 - [ ] Spectator mode with data blurring
+- [ ] Create landing page for the app, with examples and explanations of
+      how to use the app.
 
 ### 🎨 Nice-to-have Features
-- [ ] Exchange rate caching with invalidation periods
-- [ ] Advanced data visualization charts
+- [ ] Wider range if currencies
+- [ ] Allow user to select which currencies to use
 - [ ] Multi-language support
 - [ ] Dark/light theme toggle
 - [ ] Advanced filtering and search
 - [ ] Transaction categorization
 - [ ] Budget planning tools
-- [ ] Financial goal tracking
 
 ## 📝 Contributing
 
@@ -356,7 +388,10 @@ We welcome contributions! Please feel free to submit issues, feature requests, o
 
 ## 📄 License
 
-This project is currently unlicensed. Please contact the maintainers for licensing information.
+Licensed under the GNU General Public License v3.0 — see [LICENSE](./LICENSE) 
+for details.
+
+Copyright (c) 2025 Adam Walkiewicz
 
 ## 🤝 Support
 
