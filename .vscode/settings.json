@@ -61,5 +61,6 @@
       "scope": "workspace"
     }
   },
-  "makefile.configureOnOpen": false
+  "makefile.configureOnOpen": false,
+  "terminal.integrated.fontSize": 16
 }

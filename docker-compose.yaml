@@ -65,7 +65,7 @@ services:
     networks:
       - dev-net
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8012/health')"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8012/health"]
       interval: 30s
       timeout: 10s
       retries: 3

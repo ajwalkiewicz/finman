@@ -13,7 +13,10 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
+	"github.com/rs/cors"
 )
+
+type Rates map[string]float32
 
 var supportedCurrencies = map[string]bool{
 	"USD": true,
@@ -33,13 +36,6 @@ type Config struct {
 	FixerAPIKey string
 }
 
-type Rates struct {
-	Eur float32 `json:"EUR"`
-	Usd float32 `json:"USD"`
-	Pln float32 `json:"PLN"`
-	Gtq float32 `json:"GTQ"`
-}
-
 type HealthResponse struct {
 	Status         string `json:"status"`
 	Timestamp      int64  `json:"timestamp"`
@@ -52,6 +48,18 @@ type RatesResponse struct {
 	Date      string `json:"date"` // Format: YYYY-MM-DD
 	Base      string `json:"base"`
 	Rates     Rates  `json:"rates"`
+}
+
+func convertRates(r *Rates, newBase string) Rates {
+	newRates := make(Rates)
+
+	if baseRate, ok := (*r)[newBase]; ok {
+		for currency, rate := range *r {
+			newRates[currency] = rate / baseRate
+		}
+	}
+
+	return newRates
 }
 
 func loadConfig() *Config {
@@ -82,7 +90,7 @@ func loadConfig() *Config {
 	return r
 }
 
-func loadDefaultRates() Rates {
+func loadRatesFromFile() Rates {
 	log.Println("Loading default rates from rates.json file")
 	// Open file
 	file, err := os.Open("rates.json")
@@ -202,7 +210,7 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 
 	if c.FixerAPIKey == "" {
 		useDefaultRates = true
-		defaultRates = loadDefaultRates()
+		defaultRates = loadRatesFromFile()
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -241,7 +249,7 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 				Timestamp: time.Now().Unix(),
 				Date:      time.Now().Format("2006-01-02"),
 				Base:      base,
-				Rates:     defaultRates,
+				Rates:     convertRates(&defaultRates, base),
 			}
 
 			// Marshal the rates response
@@ -259,12 +267,18 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 		todayKey := getTodayCacheKey()
 
 		// Check cache first
-		val, err := rc.Get(ctx, todayKey).Result()
-		log.Printf("Get from Redis: %s, err=%s", val, err)
+		cached, err := rc.Get(ctx, todayKey).Result()
+		log.Printf("Get from Redis: %s, err=%s", cached, err)
 
 		if err != nil {
 			log.Println("Data not found in cache")
 			resp := fetchFromFixer(c.FixerAPIKey)
+
+			if base != "EUR" {
+				resp.Base = base
+				resp.Rates = convertRates(&resp.Rates, base)
+			}
+
 			out, err := json.Marshal(resp)
 			if err != nil {
 				http.Error(w, "Failed to marshal rates response", http.StatusInternalServerError)
@@ -273,12 +287,21 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 			rc.SetEx(ctx, todayKey, out, CACHE_DURATION)
 			io.Writer.Write(w, out)
 		} else {
-			var result map[string]interface{}
-			err := json.Unmarshal([]byte(val), &result)
+			var result RatesResponse
+
+			err := json.Unmarshal([]byte(cached), &result)
 			if err != nil {
 				http.Error(w, "Failed to marshal rates response", http.StatusInternalServerError)
 				return
 			}
+
+			if base != "EUR" {
+				result.Base = base
+				result.Rates = convertRates(&result.Rates, base)
+			}
+
+			log.Printf("Response: %+v", result)
+
 			out, _ := json.Marshal(result)
 			io.Writer.Write(w, out)
 		}
@@ -291,11 +314,27 @@ func main() {
 	rc := getRedisClient(config)
 	defer rc.Close()
 
-	http.HandleFunc("/health", getHealth(rc))
-	http.HandleFunc("/api/rates", getRates(config, rc))
+	mux := http.NewServeMux()
 
-	log.Println("Starting server on http://0.0.0.0:8080")
-	err := http.ListenAndServe(":8080", nil)
+	mux.HandleFunc("/health", getHealth(rc))
+	mux.HandleFunc("/api/rates", getRates(config, rc))
+
+	// Set up CORS middleware
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{
+			"http://127.0.0.1:3000",
+			"http://finman.walkiewicz.io",
+			"https://finman.walkiewicz.io",
+		},
+		AllowCredentials: true,
+		// Enable Debugging for testing, consider disabling in production
+		Debug: false,
+	})
+
+	handler := c.Handler(mux)
+
+	log.Println("Starting server on http://0.0.0.0:8012")
+	err := http.ListenAndServe(":8012", handler)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
