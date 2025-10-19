@@ -91,6 +91,7 @@ try:
         host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True
     )
     redis_client.ping()
+    logger.info("Client: %s", redis_client)
     logger.info("Connected to Redis")
 except redis.ConnectionError:
     logger.error("Could not connect to Redis. Make sure Redis is running.")
