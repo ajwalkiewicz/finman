@@ -128,7 +128,7 @@ The service will start on `http://localhost:8012`
      --name finman-proxy \
      -p 8012:8012 \
      -e REDIS_HOST=redis \
-     -e REDIS_PORT=8012 \
+     -e REDIS_PORT=6379 \
      -e FIXER_API_KEY=your-api-key \
      finman-proxy
    ```
