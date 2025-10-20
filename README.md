@@ -1,13 +1,14 @@
 # Finance Manager
 
 A comprehensive finance management application for tracking cyclic transactions, 
-expenses, and money flow between accounts. Built with FastAPI backend and Vue 3
-frontend, featuring multi-currency support and detailed analytics.
+expenses, and money flow between accounts. Built with FastAPI backend, Vue 3
+frontend, and Go proxy server, featuring multi-currency support and detailed analytics.
 
 ## ✨ Features
 
 - **🔄 Transaction Management**: Track cyclic transactions with customizable day-of-month scheduling
 - **💱 Multi-Currency Support**: Support for PLN, EUR, USD, and GTQ currencies with real-time exchange rates
+- **⚡ High-Performance Proxy**: Go-based exchange rate service with Redis caching for optimal performance
 - **🏦 Account Management**: Manage different types of accounts (bank, card, wallet, etc.) with flow visualization
 - **📊 Expense Analytics**: Comprehensive expense tracking excluding transfers between accounts
 - **📈 Money Flow Visualization**: Interactive charts showing money flow between different accounts
@@ -36,6 +37,11 @@ frontend, featuring multi-currency support and detailed analytics.
 - **Axios**: HTTP client for API communication
 - **Tailwind CSS**: Utility-first CSS framework for styling
 
+### Proxy Server
+- **Go**: High-performance proxy service for exchange rates
+- **Redis**: Caching layer for improved performance and reduced API calls
+- **Fixer.io Integration**: Real-time currency exchange rate fetching
+
 ### Infrastructure
 - **Docker**: Containerization for consistent deployment
 - **Docker Compose**: Multi-container application orchestration
@@ -46,7 +52,7 @@ frontend, featuring multi-currency support and detailed analytics.
 
 ### Prerequisites
 - **Docker and Docker Compose** (recommended for easy setup)
-- **OR** Python 3.10+ and Node.js 16+ for local development
+- **OR** Python 3.10+, Node.js 16+, and Go 1.25+ for local development
 
 ### 🐳 Quick Start with Docker Compose (Recommended)
 
@@ -139,7 +145,41 @@ frontend, featuring multi-currency support and detailed analytics.
 
    🌐 Frontend available at: http://localhost:3000
 
-### API and Secret Key
+#### Proxy Server Setup
+
+1. **Navigate to proxy directory**
+   ```bash
+   cd proxy
+   ```
+
+2. **Install dependencies**
+   - **GO** follow official instructions at https://go.dev/doc/install
+   - **Redis**:
+   ```bash
+   sudo apt update
+   sudo apt install redis-server
+   sudo systemctl start redis-server
+   ```
+   
+   > **WARNING**
+   >
+   > Remember about disabling Redis service when switching to docker setup
+   >
+   > ```bash
+   > sudo systemctl stop redis-server
+   > sudo systemctl disable redis-server
+   > ```
+
+3. **Start proxy server**
+   ```bash
+   go run main.go
+   ```
+
+   🌐 Proxy available at: http://localhost:8012
+
+> 📖 **For detailed proxy documentation**, see [proxy/README.md](./proxy/README.md)
+
+### Fixer API and Secret Key
 
 For proper and secure work, application requires secure key and Fixer API for
 fetching current currencies rates.
@@ -161,9 +201,15 @@ Use it's output as a key for `SECRET_KEY` environmental variable.
 
 #### Fixer API
 
+Project uses Fixer API to fetch realtime currency exchange rates.
+
 1. Register in Fixer page: https://fixer.io/
 2. Copy your API access key and store it in `FIXER_API_KEY` environmental variable.
 
+> **IMPORTANT**
+>
+> If you do not want to use Fixer API, you can set default exchange rates in
+> [proxy/rates.json](./proxy/rates.json)
 
 ## 🔐 Authentication & Security
 
@@ -239,7 +285,13 @@ User registration can be controlled using the `USER_REGISTRATION` environment va
 | `PUT`  | `/subscription/`       | Update user's subscription type             |
 | `GET`  | `/subscription/limits` | Get all subscription types and their limits |
 
-### 📚 API Documentation
+### Exchange Rate Proxy (Port 8012)
+| Method | Endpoint               | Description                                 |
+|--------|------------------------|---------------------------------------------|
+| `GET`  | `/health`              | Check proxy service health and Redis connectivity |
+| `GET`  | `/api/rates?base={currency}` | Get exchange rates with specified base currency (USD, EUR, PLN, GTQ) |
+
+### API Documentation
 - **Swagger UI**: http://localhost:8010/docs (disabled in production)
 - **ReDoc**: http://localhost:8010/redoc (disabled in production)
 - **OpenAPI Schema**: http://localhost:8010/openapi.json (disabled in production)

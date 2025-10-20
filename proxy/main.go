@@ -260,7 +260,7 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 		if useDefaultRates {
 			log.Println("Using default rates")
 
-			resp := RatesResponse{
+			response := RatesResponse{
 				Success:   true,
 				Timestamp: time.Now().Unix(),
 				Date:      time.Now().Format("2006-01-02"),
@@ -269,7 +269,7 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 			}
 
 			// Marshal the rates response
-			out, err := json.Marshal(resp)
+			out, err := json.Marshal(response)
 			if err != nil {
 				http.Error(w, "Failed to marshal rates response", http.StatusInternalServerError)
 				return
@@ -288,18 +288,18 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 
 		if err != nil {
 			log.Println("Data not found in cache")
-			resp, err := fetchFromFixer(c.FixerAPIKey)
+			response, err := fetchFromFixer(c.FixerAPIKey)
 			if err != nil {
 				http.Error(w, "Failed to fetch rates from Fixer API", http.StatusInternalServerError)
 				return
 			}
 
 			if base != "EUR" {
-				resp.Base = base
-				resp.Rates = convertRates(&resp.Rates, base)
+				response.Base = base
+				response.Rates = convertRates(&response.Rates, base)
 			}
 
-			out, err := json.Marshal(resp)
+			out, err := json.Marshal(response)
 			if err != nil {
 				http.Error(w, "Failed to marshal rates response", http.StatusInternalServerError)
 				return
@@ -307,22 +307,22 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 			rc.SetEx(ctx, todayKey, out, CACHE_DURATION)
 			w.Write(out)
 		} else {
-			var result RatesResponse
+			var response RatesResponse
 
-			err := json.Unmarshal([]byte(cached), &result)
+			err := json.Unmarshal([]byte(cached), &response)
 			if err != nil {
 				http.Error(w, "Failed to unmarshal rates response", http.StatusInternalServerError)
 				return
 			}
 
 			if base != "EUR" {
-				result.Base = base
-				result.Rates = convertRates(&result.Rates, base)
+				response.Base = base
+				response.Rates = convertRates(&response.Rates, base)
 			}
 
-			log.Printf("Response: %+v", result)
+			log.Printf("Response: %+v", response)
 
-			out, err := json.Marshal(result)
+			out, err := json.Marshal(response)
 			if err != nil {
 				http.Error(w, "Failed to marshal rates response", http.StatusInternalServerError)
 				return
@@ -352,6 +352,7 @@ func main() {
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{
 			"http://127.0.0.1:3000",
+			"http://localhost:3000",
 			"http://finman.walkiewicz.io",
 			"https://finman.walkiewicz.io",
 		},
