@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -79,15 +80,28 @@ func loadConfig() *Config {
 		redisPort = "6379"
 	}
 
-	r := &Config{
+	config := &Config{
 		RedisHost:   redisHost,
 		RedisPort:   redisPort,
 		FixerAPIKey: fixerAPI,
 	}
 
-	log.Printf("Config loaded: %+v", r)
+	log.Printf("Loaded config")
 
-	return r
+	length := len(config.FixerAPIKey)
+	numberOfRevealedChars := 4
+	numberOfAsterisks := length - numberOfRevealedChars
+
+	if length > 0 {
+		log.Printf("Fixer API Key: %s", strings.Repeat("*", numberOfAsterisks)+config.FixerAPIKey[numberOfAsterisks:])
+	} else {
+		log.Printf("No Fixer API Key provided, using default rates from rates.json")
+	}
+
+	log.Printf("Redis Host: %s", config.RedisHost)
+	log.Printf("Redis Port: %s", config.RedisPort)
+
+	return config
 }
 
 func loadRatesFromFile() Rates {
@@ -114,7 +128,7 @@ func loadRatesFromFile() Rates {
 	return rates
 }
 
-func fetchFromFixer(apiKey string) RatesResponse {
+func fetchFromFixer(apiKey string) (RatesResponse, error) {
 	log.Println("Fetching data from Fixer API")
 
 	url := fmt.Sprintf(
@@ -124,24 +138,27 @@ func fetchFromFixer(apiKey string) RatesResponse {
 
 	r, err := http.Get(url)
 	if err != nil {
-		panic(err)
+		log.Println("Error fetching data from Fixer API:", err)
+		return RatesResponse{}, err
 	}
 	defer r.Body.Close()
 
 	// Read file contents
 	bytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error reading response body from Fixer API:", err)
+		return RatesResponse{}, err
 	}
 
 	var ratesResponse RatesResponse
 	if err := json.Unmarshal(bytes, &ratesResponse); err != nil {
-		log.Fatal(err)
+		log.Println("Error unmarshalling response body from Fixer API:", err)
+		return RatesResponse{}, err
 	}
 
 	log.Printf("Fetched data: %v", ratesResponse)
 
-	return ratesResponse
+	return ratesResponse, nil
 }
 
 func getTodayCacheKey() string {
@@ -151,7 +168,7 @@ func getTodayCacheKey() string {
 	return cacheKey
 }
 
-func getRedisClient(c *Config) *redis.Client {
+func getRedisClient(c *Config) (*redis.Client, error) {
 	log.Println("Connecting to Redis...")
 
 	client := redis.NewClient(&redis.Options{
@@ -163,26 +180,25 @@ func getRedisClient(c *Config) *redis.Client {
 
 	ctx := context.Background()
 
-	redisStatus := client.Ping(ctx).String() == "ping: PONG"
+	redisStatus := client.Ping(ctx).Err() == nil
 
 	if !redisStatus {
-		log.Fatalln("Cannot connect to redis")
-		panic(errors.New("Failed to connect to Redis"))
+		log.Printf("Cannot connect to redis at %s:%s", c.RedisHost, c.RedisPort)
+		return nil, errors.New("failed to connect to Redis")
 	}
 
 	log.Println("Connected to Redis")
-	return client
+	return client, nil
 }
 
 func getHealth(rc *redis.Client) http.HandlerFunc {
 	ctx := context.Background()
-	// Ping the Redis server, which should respond with PONG
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Received request: %s %s\n", r.Method, r.URL.Path)
 
 		// Get health status
-		redisStatus := rc.Ping(ctx).String() == "ping: PONG"
+		redisStatus := rc.Ping(ctx).Err() == nil
 
 		h := &HealthResponse{
 			Status:         "ok",
@@ -198,7 +214,7 @@ func getHealth(rc *redis.Client) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		io.Writer.Write(w, out)
+		w.Write(out)
 	}
 }
 
@@ -258,7 +274,7 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 				http.Error(w, "Failed to marshal rates response", http.StatusInternalServerError)
 				return
 			}
-			io.Writer.Write(w, out)
+			w.Write(out)
 			return
 		}
 
@@ -272,7 +288,11 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 
 		if err != nil {
 			log.Println("Data not found in cache")
-			resp := fetchFromFixer(c.FixerAPIKey)
+			resp, err := fetchFromFixer(c.FixerAPIKey)
+			if err != nil {
+				http.Error(w, "Failed to fetch rates from Fixer API", http.StatusInternalServerError)
+				return
+			}
 
 			if base != "EUR" {
 				resp.Base = base
@@ -285,7 +305,7 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 				return
 			}
 			rc.SetEx(ctx, todayKey, out, CACHE_DURATION)
-			io.Writer.Write(w, out)
+			w.Write(out)
 		} else {
 			var result RatesResponse
 
@@ -303,19 +323,24 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 			log.Printf("Response: %+v", result)
 
 			out, _ := json.Marshal(result)
-			io.Writer.Write(w, out)
+			w.Write(out)
 		}
 	}
 }
 
 func main() {
+	var rc *redis.Client
+	var err error
+
 	config := loadConfig()
 
-	rc := getRedisClient(config)
+	rc, err = getRedisClient(config)
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis: %v", err)
+	}
 	defer rc.Close()
 
 	mux := http.NewServeMux()
-
 	mux.HandleFunc("/health", getHealth(rc))
 	mux.HandleFunc("/api/rates", getRates(config, rc))
 
@@ -330,11 +355,10 @@ func main() {
 		// Enable Debugging for testing, consider disabling in production
 		Debug: false,
 	})
-
 	handler := c.Handler(mux)
 
 	log.Println("Starting server on http://0.0.0.0:8012")
-	err := http.ListenAndServe(":8012", handler)
+	err = http.ListenAndServe(":8012", handler)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
