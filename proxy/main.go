@@ -311,7 +311,7 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 
 			err := json.Unmarshal([]byte(cached), &result)
 			if err != nil {
-				http.Error(w, "Failed to marshal rates response", http.StatusInternalServerError)
+				http.Error(w, "Failed to unmarshal rates response", http.StatusInternalServerError)
 				return
 			}
 
@@ -322,7 +322,11 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 
 			log.Printf("Response: %+v", result)
 
-			out, _ := json.Marshal(result)
+			out, err := json.Marshal(result)
+			if err != nil {
+				http.Error(w, "Failed to marshal rates response", http.StatusInternalServerError)
+				return
+			}
 			w.Write(out)
 		}
 	}
