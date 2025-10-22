@@ -51,16 +51,21 @@ type RatesResponse struct {
 	Rates     Rates  `json:"rates"`
 }
 
-func convertRates(r *Rates, newBase string) Rates {
+func convertRates(r *Rates, newBase string) (Rates, error) {
 	newRates := make(Rates)
 
-	if baseRate, ok := (*r)[newBase]; ok {
-		for currency, rate := range *r {
-			newRates[currency] = rate / baseRate
-		}
+	baseRate, ok := (*r)[newBase]
+	if !ok {
+		log.Println("Base currency not found in rates:", newBase)
+		return nil, errors.New("base currency not found in rates")
 	}
 
-	return newRates
+	for currency, rate := range *r {
+		newRates[currency] = rate / baseRate
+	}
+	newRates[newBase] = 1.0
+
+	return newRates, nil
 }
 
 func loadConfig() *Config {
@@ -104,12 +109,13 @@ func loadConfig() *Config {
 	return config
 }
 
-func loadRatesFromFile() Rates {
+func loadRatesFromFile() (Rates, error) {
 	log.Println("Loading default rates from rates.json file")
 	// Open file
 	file, err := os.Open("rates.json")
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error opening rates.json file:", err)
+		return nil, errors.New("failed to open rates.json file")
 	}
 	// Something like "final" in Python
 	defer file.Close()
@@ -117,15 +123,17 @@ func loadRatesFromFile() Rates {
 	// Read file contents
 	bytes, err := io.ReadAll(file)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error reading rates.json file:", err)
+		return nil, errors.New("failed to read rates.json file")
 	}
 
 	var rates Rates
 	if err := json.Unmarshal(bytes, &rates); err != nil {
-		log.Fatal(err)
+		log.Println("Error unmarshalling rates.json file:", err)
+		return nil, errors.New("failed to unmarshal rates.json file")
 	}
 
-	return rates
+	return rates, nil
 }
 
 func fetchFromFixer(apiKey string) (RatesResponse, error) {
@@ -219,14 +227,18 @@ func getHealth(rc *redis.Client) http.HandlerFunc {
 }
 
 func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
+	var defaultRates Rates
 	useDefaultRates := false
-	defaultRates := Rates{}
-
 	ctx := context.Background()
 
 	if c.FixerAPIKey == "" {
+		var err error
 		useDefaultRates = true
-		defaultRates = loadRatesFromFile()
+		defaultRates, err = loadRatesFromFile()
+		if err != nil {
+			log.Println("Error loading default rates:", err)
+			panic("Cannot load default rates from rates.json")
+		}
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -260,12 +272,18 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 		if useDefaultRates {
 			log.Println("Using default rates")
 
+			convertedRates, err := convertRates(&defaultRates, base)
+			if err != nil {
+				http.Error(w, "Failed to convert default rates", http.StatusInternalServerError)
+				return
+			}
+
 			response := RatesResponse{
 				Success:   true,
 				Timestamp: time.Now().Unix(),
 				Date:      time.Now().Format("2006-01-02"),
 				Base:      base,
-				Rates:     convertRates(&defaultRates, base),
+				Rates:     convertedRates,
 			}
 
 			// Marshal the rates response
@@ -294,17 +312,36 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 				return
 			}
 
-			if base != "EUR" {
-				response.Base = base
-				response.Rates = convertRates(&response.Rates, base)
-			}
-
+			// Save response from Fixer API to Redis
 			out, err := json.Marshal(response)
 			if err != nil {
 				http.Error(w, "Failed to marshal rates response", http.StatusInternalServerError)
 				return
 			}
 			rc.SetEx(ctx, todayKey, out, CACHE_DURATION)
+
+			// Recalculate rates if needed
+			if base != "EUR" {
+
+				convertedRates, err := convertRates(&response.Rates, base)
+				if err != nil {
+					http.Error(w, "Failed to convert rates", http.StatusInternalServerError)
+					return
+				}
+
+				response.Base = base
+				response.Rates = convertedRates
+
+				// Marshal updated rates response
+				out, err = json.Marshal(response)
+				if err != nil {
+					http.Error(w, "Failed to marshal rates response", http.StatusInternalServerError)
+					return
+				}
+			}
+
+			log.Printf("Response: %+v", response)
+
 			w.Write(out)
 		} else {
 			var response RatesResponse
@@ -316,8 +353,15 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 			}
 
 			if base != "EUR" {
+
+				convertedRates, err := convertRates(&response.Rates, base)
+				if err != nil {
+					http.Error(w, "Failed to convert rates", http.StatusInternalServerError)
+					return
+				}
+
 				response.Base = base
-				response.Rates = convertRates(&response.Rates, base)
+				response.Rates = convertedRates
 			}
 
 			log.Printf("Response: %+v", response)
