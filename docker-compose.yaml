@@ -65,7 +65,7 @@ services:
     networks:
       - dev-net
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8012/health"]
+      test: ["CMD", "/proxy", "check"]
       interval: 30s
       timeout: 10s
       retries: 3
