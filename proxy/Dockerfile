@@ -11,7 +11,7 @@ RUN go mod download
 # Copy application code
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o proxy .
+RUN CGO_ENABLED=0 GOOS=linux go build -o proxy ./cmd/api/main.go
 
 # Stage 2: Create minimal image with Alpine for CA certificates and healthcheck support
 FROM alpine:latest AS support

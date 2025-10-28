@@ -1,6 +1,6 @@
 // Rates handling and conversion functions.
 
-package main
+package pkg
 
 import (
 	"encoding/json"
@@ -18,6 +18,10 @@ func ConvertRates(r *Rates, newBase string) (Rates, error) {
 	baseRate, ok := (*r)[newBase]
 	if !ok {
 		return nil, fmt.Errorf("base currency not found in rates: %s", newBase)
+	}
+
+	if baseRate == 0 {
+		return nil, fmt.Errorf("base currency rate is zero: %s", newBase)
 	}
 
 	for currency, rate := range *r {

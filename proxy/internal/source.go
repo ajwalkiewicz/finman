@@ -1,6 +1,4 @@
-// Source package
-
-package main
+package internal
 
 import (
 	"encoding/json"
@@ -8,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	"proxy/pkg"
 )
 
 type RatesFetcher interface {
@@ -71,7 +71,7 @@ func (s *FileSource) FetchRates() (RatesResponse, error) {
 		return RatesResponse{Success: false}, fmt.Errorf("failed to read '%s' file: %w", s.Path, err)
 	}
 
-	var rates Rates
+	var rates pkg.Rates
 	if err := json.Unmarshal(bytes, &rates); err != nil {
 		return RatesResponse{Success: false}, fmt.Errorf("failed to unmarshal '%s' file: %w", s.Path, err)
 	}

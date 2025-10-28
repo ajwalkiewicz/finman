@@ -1,7 +1,7 @@
 // Middleware functions for HTTP handlers
 //
 // Source: https://gowebexamples.com/advanced-middleware/
-package main
+package internal
 
 import (
 	"log"
@@ -42,7 +42,7 @@ func Method(m string) Middleware {
 
 			// Do middleware things
 			if r.Method != m {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 				return
 			}
 

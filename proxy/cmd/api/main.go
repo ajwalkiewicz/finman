@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"proxy/internal"
+
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/cors"
 )
@@ -19,17 +21,22 @@ func StartServer() {
 	var rc *redis.Client
 	var err error
 
-	config := LoadConfig()
+	config := internal.LoadConfig()
 
 	// Try to connect to Redis with retries
 	attempts := 3
 	sleep := 2 * time.Second
 
+	// According to:
+	// https://cs.opensource.google/go/x/tools/+/refs/tags/gopls/v0.20.0:gopls/internal/analysis/modernize/rangeint.go
+	// It is valid code.
+	// AI's are wrong about it. Even `gofmt -s` agrees it's valid.
 	for range attempts {
-		rc, err = getRedisClient(config)
+		rc, err = internal.GetRedisClient(config.RedisHost, config.RedisPort)
 		if err == nil {
 			break
 		}
+		log.Printf("Failed to connect to Redis: %v. Retrying in %s...", err, sleep)
 		time.Sleep(sleep)
 	}
 
@@ -41,14 +48,14 @@ func StartServer() {
 
 	// Create new mux and register handlers
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", Chain(getHealth(rc), Method("GET"), Logging()))
+	mux.HandleFunc("/health", internal.Chain(internal.GetHealth(rc), internal.Method("GET"), internal.Logging()))
 	mux.HandleFunc(
 		"/api/rates",
-		Chain(
-			getRates(config, rc),
-			Method("GET"),
-			Validator(ValidateBaseCurrency),
-			Logging(),
+		internal.Chain(
+			internal.GetRates(rc, config),
+			internal.Method("GET"),
+			internal.Validator(internal.ValidateBaseCurrency),
+			internal.Logging(),
 		),
 	)
 

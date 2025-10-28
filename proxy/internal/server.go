@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"context"
@@ -9,7 +9,14 @@ import (
 	"net/http"
 	"time"
 
+	"proxy/pkg"
+
 	"github.com/redis/go-redis/v9"
+)
+
+const (
+	CacheKeyPrefix string        = "exchange_rates"
+	CacheDuration  time.Duration = 24 * 60 * 60 * time.Second // 24 hours
 )
 
 var supportedCurrencies = map[string]bool{
@@ -18,11 +25,6 @@ var supportedCurrencies = map[string]bool{
 	"PLN": true,
 	"GTQ": true,
 }
-
-const (
-	CACHE_KEY_PREFIX string        = "exchange_rates"
-	CACHE_DURATION   time.Duration = 24 * 60 * 60 * time.Second // 24 hours
-)
 
 type Marshaler interface {
 	Marshal() ([]byte, error)
@@ -46,11 +48,11 @@ func (r *HealthResponse) Marshal() ([]byte, error) {
 }
 
 type RatesResponse struct {
-	Success   bool   `json:"success"`
-	Timestamp int64  `json:"timestamp"`
-	Date      string `json:"date"` // Format: YYYY-MM-DD
-	Base      string `json:"base"`
-	Rates     Rates  `json:"rates"`
+	Success   bool      `json:"success"`
+	Timestamp int64     `json:"timestamp"`
+	Date      string    `json:"date"` // Format: YYYY-MM-DD
+	Base      string    `json:"base"`
+	Rates     pkg.Rates `json:"rates"`
 }
 
 // Marshal method for RatesResponse
@@ -66,16 +68,16 @@ func (r *RatesResponse) Marshal() ([]byte, error) {
 
 func getTodayCacheKey() string {
 	today := time.Now().Format("2006-01-02")
-	cacheKey := fmt.Sprintf("%s_%s", CACHE_KEY_PREFIX, today)
+	cacheKey := fmt.Sprintf("%s_%s", CacheKeyPrefix, today)
 	log.Printf("Todays cache key: %s", cacheKey)
 	return cacheKey
 }
 
-func getRedisClient(c *Config) (*redis.Client, error) {
+func GetRedisClient(redisHost, redisPort string) (*redis.Client, error) {
 	log.Println("Connecting to Redis...")
 
 	client := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", c.RedisHost, c.RedisPort),
+		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
 		Password: "", // No password set
 		DB:       0,  // Use default DB
 		Protocol: 2,  // Connection protocol
@@ -86,7 +88,7 @@ func getRedisClient(c *Config) (*redis.Client, error) {
 	redisStatus := client.Ping(ctx).Err() == nil
 
 	if !redisStatus {
-		log.Printf("Cannot connect to redis at %s:%s", c.RedisHost, c.RedisPort)
+		log.Printf("Cannot connect to redis at %s:%s", redisHost, redisPort)
 		return nil, errors.New("failed to connect to Redis")
 	}
 
@@ -94,7 +96,7 @@ func getRedisClient(c *Config) (*redis.Client, error) {
 	return client, nil
 }
 
-func getHealth(rc *redis.Client) http.HandlerFunc {
+func GetHealth(rc *redis.Client) http.HandlerFunc {
 	ctx := context.Background()
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -144,12 +146,12 @@ func ValidateBaseCurrency(r *http.Request) error {
 }
 
 // Helper function to create a response with proper base currency conversion
-func createRatesResponse(rates Rates, base string) (RatesResponse, error) {
+func createRatesResponse(rates pkg.Rates, base string) (RatesResponse, error) {
 	convertedRates := rates
 	var err error
 
 	if base != "EUR" {
-		convertedRates, err = ConvertRates(&rates, base)
+		convertedRates, err = pkg.ConvertRates(&rates, base)
 		if err != nil {
 			return RatesResponse{}, fmt.Errorf("failed to convert rates: %v", err)
 		}
@@ -165,7 +167,7 @@ func createRatesResponse(rates Rates, base string) (RatesResponse, error) {
 }
 
 // Helper function to handle default rates
-func handleDefaultRates(defaultRates Rates, base string) (RatesResponse, error) {
+func handleDefaultRates(defaultRates pkg.Rates, base string) (RatesResponse, error) {
 	log.Println("Using default rates")
 
 	response, err := createRatesResponse(defaultRates, base)
@@ -177,7 +179,7 @@ func handleDefaultRates(defaultRates Rates, base string) (RatesResponse, error) 
 }
 
 // Helper function to handle API rates (both fresh and cached)
-func handleAPIRates(rc *redis.Client, ctx context.Context, c *Config, base string) (RatesResponse, error) {
+func handleAPIRates(rc *redis.Client, ctx context.Context, fixerAPIKey, base string) (RatesResponse, error) {
 	todayKey := getTodayCacheKey()
 
 	// Check cache first
@@ -189,7 +191,7 @@ func handleAPIRates(rc *redis.Client, ctx context.Context, c *Config, base strin
 	if err != nil {
 		// Cache miss - fetch from API
 		log.Println("Data not found in cache")
-		fixerSource := NewFixerSource(c.FixerAPIKey)
+		fixerSource := NewFixerSource(fixerAPIKey)
 		response, err = fixerSource.FetchRates()
 		if err != nil {
 			return RatesResponse{}, fmt.Errorf("failed to fetch rates from Fixer API: %v", err)
@@ -200,7 +202,7 @@ func handleAPIRates(rc *redis.Client, ctx context.Context, c *Config, base strin
 		if err != nil {
 			return RatesResponse{}, fmt.Errorf("failed to marshal rates for cache: %v", err)
 		}
-		rc.SetEx(ctx, todayKey, cachedData, CACHE_DURATION)
+		rc.SetEx(ctx, todayKey, cachedData, CacheDuration)
 	} else {
 		// Cache hit - unmarshal cached data
 		err = json.Unmarshal([]byte(cached), &response)
@@ -218,15 +220,15 @@ func handleAPIRates(rc *redis.Client, ctx context.Context, c *Config, base strin
 	return finalResponse, nil
 }
 
-func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
-	var defaultRates Rates
+func GetRates(rc *redis.Client, c *Config) http.HandlerFunc {
+	var defaultRates pkg.Rates
 	useDefaultRates := false
 	ctx := context.Background()
 
 	if c.FixerAPIKey == "" {
 		var err error
 		useDefaultRates = true
-		defaultRates, err = LoadRatesFromFile(c.DefaultRatesFile)
+		defaultRates, err = pkg.LoadRatesFromFile(c.DefaultRatesFile)
 		if err != nil {
 			log.Println("Error loading default rates:", err)
 			panic("Cannot load default rates from rates.json")
@@ -246,7 +248,7 @@ func getRates(c *Config, rc *redis.Client) http.HandlerFunc {
 			response, err = handleDefaultRates(defaultRates, base)
 		} else {
 			log.Println("Checking for data in cache...")
-			response, err = handleAPIRates(rc, ctx, c, base)
+			response, err = handleAPIRates(rc, ctx, c.FixerAPIKey, base)
 		}
 
 		if err != nil {

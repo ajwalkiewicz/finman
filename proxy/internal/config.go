@@ -1,6 +1,4 @@
-// proxy/config.go
-
-package main
+package internal
 
 import (
 	"log"
@@ -52,7 +50,7 @@ func LoadConfig() *Config {
 
 	length := len(config.FixerAPIKey)
 	numberOfRevealedChars := 4
-	numberOfAsterisks := length - numberOfRevealedChars
+	numberOfAsterisks := max(length-numberOfRevealedChars, 0)
 
 	if length > 0 {
 		log.Printf("Fixer API Key: %s", strings.Repeat("*", numberOfAsterisks)+config.FixerAPIKey[numberOfAsterisks:])
