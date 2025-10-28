@@ -30,7 +30,7 @@ func (s *FixerSource) FetchRates() (RatesResponse, error) {
 	}
 	defer r.Body.Close()
 
-	// Read file contents
+	// Read response body
 	bytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		return RatesResponse{}, err
