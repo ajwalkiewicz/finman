@@ -110,7 +110,7 @@ The service uses environment variables for configuration. Create a `.env` file i
 
 5. **Run the service:**
    ```bash
-   go run main.go
+   go run ./cmd/api/main.go
    ```
 
 The service will start on `http://localhost:8012`
@@ -199,7 +199,7 @@ Monitor the service using:
 ### Building
 
 ```bash
-go build -o proxy .
+go build -o proxy ./cmd/api/main.go
 ```
 
 ### Testing

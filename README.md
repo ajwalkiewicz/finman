@@ -172,7 +172,7 @@ frontend, and Go proxy server, featuring multi-currency support and detailed ana
 
 3. **Start proxy server**
    ```bash
-   go run main.go
+   go run ./cmd/api/main.go
    ```
 
    🌐 Proxy available at: http://localhost:8012
@@ -201,7 +201,7 @@ Use it's output as a key for `SECRET_KEY` environmental variable.
 
 #### Fixer API
 
-Project uses Fixer API to fetch realtime currency exchange rates.
+Project uses Fixer API to fetch real-time currency exchange rates.
 
 1. Register in Fixer page: https://fixer.io/
 2. Copy your API access key and store it in `FIXER_API_KEY` environmental variable.
