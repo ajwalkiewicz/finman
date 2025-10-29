@@ -1,7 +1,7 @@
 // Middleware functions for HTTP handlers
 //
 // Source: https://gowebexamples.com/advanced-middleware/
-package internal
+package server
 
 import (
 	"log"

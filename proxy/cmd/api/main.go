@@ -1,115 +1,28 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"proxy/internal"
-
-	"github.com/redis/go-redis/v9"
-	"github.com/rs/cors"
+	"proxy/internal/config"
+	"proxy/internal/server"
 )
 
 // StartServer initializes and starts the HTTP server
 func StartServer() {
-	var rc *redis.Client
-	var err error
-
-	config := internal.LoadConfig()
-
-	// Try to connect to Redis with retries
-	attempts := 3
-	sleep := 2 * time.Second
-
-	// According to:
-	// https://cs.opensource.google/go/x/tools/+/refs/tags/gopls/v0.20.0:gopls/internal/analysis/modernize/rangeint.go
-	// It is valid code.
-	// AI's are wrong about it. Even `gofmt -s` agrees it's valid.
-	for range attempts {
-		rc, err = internal.GetRedisClient(config.RedisHost, config.RedisPort)
-		if err == nil {
-			break
-		}
-		log.Printf("Failed to connect to Redis: %v. Retrying in %s...", err, sleep)
-		time.Sleep(sleep)
-	}
-
-	if err != nil {
-		log.Fatalf("Failed to connect to Redis after %d attempts: %v", attempts, err)
-	}
-
-	defer rc.Close()
-
-	// Create new mux and register handlers
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", internal.Chain(internal.GetHealth(rc), internal.Method("GET"), internal.Logging()))
-	mux.HandleFunc(
-		"/api/rates",
-		internal.Chain(
-			internal.GetRates(rc, config),
-			internal.Method("GET"),
-			internal.Validator(internal.ValidateBaseCurrency),
-			internal.Logging(),
-		),
-	)
-
-	// Set up CORS middleware
-	c := cors.New(cors.Options{
-		AllowedOrigins: []string{
-			"http://127.0.0.1:3000",
-			"http://localhost:3000",
-			"http://finman.walkiewicz.io",
-			"https://finman.walkiewicz.io",
-		},
-		AllowCredentials: true,
-		// Enable Debugging for testing, consider disabling in production
-		Debug: false,
-	})
-	handler := c.Handler(mux)
-
-	// Create the HTTP server
-	server := &http.Server{
-		Addr:    ":8012",
-		Handler: handler,
-	}
-
-	// Start the server in a goroutine
-	go func() {
-		log.Printf("Starting server on http://0.0.0.0%s", server.Addr)
-
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Could not listen on %s: %v\n", server.Addr, err)
-		}
-
-		log.Println("Stopped serving new connections.")
-	}()
-
-	// Wait for interrupt signal to gracefully shutdown the server with
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	<-sigChan
-
-	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
-	defer shutdownRelease()
-
-	if err := server.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("HTTP shutdown error: %v", err)
-	}
-
-	log.Println("Graceful shutdown complete.")
+	config := config.Load()
+	ServerService := server.New(config)
+	ServerService.Start()
 }
 
-// HealthCheck performs a health check by sending a request to the /health endpoint
-// of the running server.
-// Used in Docker healthcheck.
+// HealthCheck performs a health check by sending a request to the /health
+// endpoint of the running server.
+// Used in Docker "healthcheck".
 func HealthCheck() {
-	url := "http://127.0.0.1:8012/health"
+	config := config.Load()
+
+	url := fmt.Sprintf("http://127.0.0.1:%d/health", config.ProxyPort)
 	if _, err := http.Get(url); err != nil {
 		fmt.Printf("Health check failed: %v", err)
 		os.Exit(2)
@@ -117,18 +30,25 @@ func HealthCheck() {
 }
 
 func main() {
+	progName := os.Args[0]
+	usageMessage := fmt.Sprintf("Usage: %s <command>\nCommands:\n  server   Start the API server\n  check    Perform a health check\n", progName)
+
 	if len(os.Args) < 2 {
-		fmt.Println("expected 'server' or 'check' subcommands")
+		message := fmt.Sprintf("Expected 'server' or 'check' subcommands\n%s", usageMessage)
+		fmt.Println(message)
 		os.Exit(1)
 	}
 
-	switch os.Args[1] {
+	command := os.Args[1]
+
+	switch command {
 	case "server":
 		StartServer()
 	case "check":
 		HealthCheck()
 	default:
-		fmt.Println("expected 'server' or 'check' subcommands")
+		message := fmt.Sprintf("Unrecognized command: %q\n%s", command, usageMessage)
+		fmt.Println(message)
 		os.Exit(1)
 	}
 }

@@ -1,10 +1,13 @@
-package pkg
+package rates
 
-import "testing"
+import (
+	"proxy/internal/interfaces"
+	"testing"
+)
 
 func TestConvertRates(t *testing.T) {
 	t.Run("Convert Rates to PLN", func(t *testing.T) {
-		rates := Rates{
+		rates := interfaces.Rates{
 			"EUR": 1.0000,
 			"USD": 1.1000,
 			"PLN": 4.5000,
@@ -13,7 +16,7 @@ func TestConvertRates(t *testing.T) {
 		newBase := "PLN"
 
 		got, _ := ConvertRates(&rates, newBase)
-		want := Rates{
+		want := interfaces.Rates{
 			"EUR": 0.22222222,
 			"USD": 0.24444444,
 			"PLN": 1.00000000,
@@ -24,7 +27,7 @@ func TestConvertRates(t *testing.T) {
 	})
 
 	t.Run("Base currency not found in rates", func(t *testing.T) {
-		rates := Rates{
+		rates := interfaces.Rates{
 			"EUR": 1.0000,
 			"USD": 1.1000,
 		}
@@ -37,7 +40,7 @@ func TestConvertRates(t *testing.T) {
 	})
 
 	t.Run("Base currency rate is zero", func(t *testing.T) {
-		rates := Rates{
+		rates := interfaces.Rates{
 			"EUR": 1.0000,
 			"USD": 1.1000,
 			"PLN": 0.0000,
@@ -52,7 +55,7 @@ func TestConvertRates(t *testing.T) {
 
 }
 
-func assertCorrectRates(t testing.TB, got, want Rates) {
+func assertCorrectRates(t testing.TB, got, want interfaces.Rates) {
 	t.Helper()
 	for currency, wantRate := range want {
 		if got[currency] != wantRate {
