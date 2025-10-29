@@ -72,15 +72,22 @@ func (s *ServerService) GetHealth() http.HandlerFunc {
 }
 
 func (s *ServerService) GetRates() http.HandlerFunc {
-	FileSource := NewFileSource(s.Config.DefaultRatesFile)
+	FileSource := NewFileSource(s.Config.RatesFile)
 	FixerSource := NewFixerSource(s.Config.FixerAPIKey)
 
 	// Load default rates from file.
 	// This will be used if API fetching fails or if configured to use default rates.
 	DefaultRatesResponse, err := FileSource.Fetch()
 	if err != nil || !DefaultRatesResponse.Success {
-		log.Fatalf("Failed to load default rates from file")
-		DefaultRatesResponse = interfaces.RatesResponse{Rates: interfaces.Rates{"EUR": 1.0}}
+		log.Println("Failed to load default rates from file")
+		DefaultRatesResponse = interfaces.RatesResponse{
+			Rates: interfaces.Rates{
+				"EUR": 1.0000,
+				"USD": 1.1000,
+				"PLN": 4.5000,
+				"GTQ": 8.5000,
+			},
+		}
 	}
 
 	DefaultSource := NewDefaultSource(DefaultRatesResponse)
@@ -89,7 +96,7 @@ func (s *ServerService) GetRates() http.HandlerFunc {
 	var RatesHandler func(RatesFetcher, interfaces.RatesResponse) (interfaces.RatesResponse, error)
 
 	if s.Config.UseDefaultRates {
-		log.Println("Using default rates file as rates source")
+		log.Println("Using default rates as rates source")
 		RatesSource = DefaultSource
 		RatesHandler = s.handleDefaultRates
 	} else {

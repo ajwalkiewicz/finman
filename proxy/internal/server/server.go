@@ -97,7 +97,7 @@ func (s *ServerService) Close() error {
 // database close itself before server shutdown is called.
 // In such context, better use Close() method.
 func (s *ServerService) Shutdown(ctx context.Context) error {
-	log.Printf("Shutting down server on http://localhost:%d", s.Config.ProxyPort)
+	log.Printf("Shutting down server on http://localhost:%s", s.Config.ProxyPort)
 
 	dbErr := s.Database.Shutdown(ctx)
 	if dbErr != nil {

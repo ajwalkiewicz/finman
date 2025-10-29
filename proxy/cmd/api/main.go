@@ -22,7 +22,7 @@ func StartServer() {
 func HealthCheck() {
 	config := config.Load()
 
-	url := fmt.Sprintf("http://127.0.0.1:%d/health", config.ProxyPort)
+	url := fmt.Sprintf("http://127.0.0.1:%s/health", config.ProxyPort)
 	if _, err := http.Get(url); err != nil {
 		fmt.Printf("Health check failed: %v", err)
 		os.Exit(2)

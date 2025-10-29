@@ -9,20 +9,20 @@ import (
 )
 
 const (
-	defaultProxyPort = "8012"
-	defaultRedisHost = "127.0.0.1"
-	defaultRedisPort = "6379"
-	defaultRatesFile = "rates.json"
+	DefaultProxyPort = "8012"
+	DefaultRedisHost = "127.0.0.1"
+	DefaultRedisPort = "6379"
+	DefaultRatesFile = "rates.json"
 )
 
 // Config holds the configuration values for the application
 type Config struct {
-	ProxyPort        string
-	RedisHost        string
-	RedisPort        string
-	FixerAPIKey      string
-	DefaultRatesFile string
-	UseDefaultRates  bool
+	ProxyPort       string
+	RedisHost       string
+	RedisPort       string
+	FixerAPIKey     string
+	RatesFile       string
+	UseDefaultRates bool
 }
 
 // Load loads configuration from environment variables or .env file
@@ -36,17 +36,17 @@ func Load() *Config {
 	redisHost := os.Getenv("REDIS_HOST")
 	redisPort := os.Getenv("REDIS_PORT")
 	fixerAPI := os.Getenv("FIXER_API_KEY")
-	defaultRatesFile := os.Getenv("DEFAULT_RATES_FILE")
+	ratesFile := os.Getenv("DEFAULT_RATES_FILE")
 
 	if proxyPort == "" {
-		proxyPort = defaultProxyPort
+		proxyPort = DefaultProxyPort
 	}
 
 	if redisHost == "" {
-		redisHost = defaultRedisHost
+		redisHost = DefaultRedisHost
 	}
 	if redisPort == "" {
-		redisPort = defaultRedisPort
+		redisPort = DefaultRedisPort
 	}
 
 	var useDefaultRates bool
@@ -56,17 +56,17 @@ func Load() *Config {
 		useDefaultRates = false
 	}
 
-	if defaultRatesFile == "" {
-		defaultRatesFile = defaultRatesFile
+	if ratesFile == "" {
+		ratesFile = DefaultRatesFile
 	}
 
 	config := &Config{
-		ProxyPort:        proxyPort,
-		RedisHost:        redisHost,
-		RedisPort:        redisPort,
-		FixerAPIKey:      fixerAPI,
-		DefaultRatesFile: defaultRatesFile,
-		UseDefaultRates:  useDefaultRates,
+		ProxyPort:       proxyPort,
+		RedisHost:       redisHost,
+		RedisPort:       redisPort,
+		FixerAPIKey:     fixerAPI,
+		RatesFile:       ratesFile,
+		UseDefaultRates: useDefaultRates,
 	}
 
 	log.Printf("Loaded config")

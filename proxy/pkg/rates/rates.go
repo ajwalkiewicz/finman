@@ -42,7 +42,7 @@ func LoadRatesFromFile(path string) (interfaces.Rates, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open '%s' file: %w", path, err)
 	}
-	// Something like "final" in Python
+	// Ensure file is closed after function completes
 	defer file.Close()
 
 	// Read file contents
