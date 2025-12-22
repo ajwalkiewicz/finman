@@ -86,7 +86,7 @@ func (s *DBService) Shutdown(ctx context.Context) error {
 
 // Get retrieves a value from Redis by key.
 func (s *DBService) Get(key string) (string, error) {
-	ctx, release := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, release := context.WithTimeout(context.Background(), 1*time.Second)
 	defer release()
 
 	return s.Service.Get(ctx, key).Result()
@@ -94,7 +94,7 @@ func (s *DBService) Get(key string) (string, error) {
 
 // Set stores a value in Redis with the specified key.
 func (s *DBService) Set(key string, value any) error {
-	ctx, release := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, release := context.WithTimeout(context.Background(), 1*time.Second)
 	defer release()
 
 	return s.Service.SetEx(ctx, key, value, CacheDuration).Err()

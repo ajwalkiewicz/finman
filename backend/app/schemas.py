@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 from .password_validator import PasswordValidator
 
@@ -17,25 +17,25 @@ class UserCreate(BaseModel):
 
     @field_validator("username")
     @classmethod
-    def validate_username(cls, v: str) -> str:
+    def validate_username(cls, value: str) -> str:
         """Validate username meets requirements for new accounts."""
-        if not re.match(r"^[a-zA-Z0-9_]{6,}$", v):
+        if not re.match(r"^[a-zA-Z0-9_]{6,}$", value):
             raise ValueError(
                 "Username must be at least 6 characters long and contain only "
                 "English letters (a-z, A-Z), numbers (0-9), and underscores"
             )
-        return v
+        return value
 
     @field_validator("password")
     @classmethod
-    def validate_password_strength(cls, v: str, info) -> str:
+    def validate_password_strength(cls, value: str, info: ValidationInfo) -> str:
         """Validate password meets security requirements."""
         # Get username from the model data
         username = info.data.get("username", "")
 
         # Validate password strength
-        PasswordValidator.validate_and_raise(v, username)
-        return v
+        PasswordValidator.validate_and_raise(value, username)
+        return value
 
 
 class PasswordChange(BaseModel):
@@ -44,10 +44,10 @@ class PasswordChange(BaseModel):
 
     @field_validator("new_password")
     @classmethod
-    def validate_new_password_strength(cls, v: str) -> str:
+    def validate_new_password_strength(cls, value: str) -> str:
         """Validate new password meets security requirements."""
-        PasswordValidator.validate_and_raise(v)
-        return v
+        PasswordValidator.validate_and_raise(value)
+        return value
 
 
 class User(BaseModel):
@@ -136,13 +136,18 @@ class SubscriptionInfo(BaseModel):
     can_add_account: bool
 
 
+subscription_types = ["free", "plus", "pro"]
+
+
 class SubscriptionUpdate(BaseModel):
     subscription_type: str
 
     @field_validator("subscription_type")
     @classmethod
-    def validate_subscription_type(cls, v: str) -> str:
+    def validate_subscription_type(cls, value: str) -> str:
         """Validate subscription type is valid."""
-        if v not in ["free", "plus", "pro"]:
-            raise ValueError("Subscription type must be one of: free, plus, pro")
-        return v
+        if value not in subscription_types:
+            raise ValueError(
+                f"Subscription type must be one of: {', '.join(subscription_types)}"
+            )
+        return value

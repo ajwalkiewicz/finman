@@ -12,20 +12,9 @@ import (
 	"proxy/internal/interfaces"
 )
 
-type RatesFetcher interface {
-	Fetch() (interfaces.RatesResponse, error)
-}
-
-// Struct that represents Fixer source
-type FixerSource struct {
-	APIKey string
-}
-
-// Send request to Fixer and parse response ro RatesResponse
-func (s *FixerSource) Fetch() (interfaces.RatesResponse, error) {
-	query := fmt.Sprintf("access_key=%s&symbols=EUR,USD,PLN,GTQ", s.APIKey)
-	url := fmt.Sprintf("https://data.fixer.io/api/latest?%s", query)
-
+// Helper function to send HTTP GET request with retries
+// TODO: Consider using context with timeout
+func sendRequest(url string) (*http.Response, error) {
 	var resp *http.Response
 	var err error
 
@@ -36,9 +25,65 @@ func (s *FixerSource) Fetch() (interfaces.RatesResponse, error) {
 		if err == nil {
 			break
 		}
-		log.Printf("Attempt %d: Error fetching rates from Fixer: %v", attempt+1, err)
+		log.Printf("Attempt %d: Error sending request to %s: %v", attempt+1, url, err)
 		time.Sleep(sleep)
 	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+type RatesFetcher interface {
+	Fetch() (interfaces.RatesResponse, error)
+}
+
+// Struct that represents a generic source
+type GenericSource struct {
+	URL string
+}
+
+// Send request to Generic source and parse response to RatesResponse
+func (s *GenericSource) Fetch() (interfaces.RatesResponse, error) {
+	resp, err := sendRequest(s.URL)
+
+	if err != nil {
+		return interfaces.RatesResponse{}, err
+	}
+
+	defer resp.Body.Close()
+
+	// Read response body
+	bytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return interfaces.RatesResponse{}, err
+	}
+
+	var ratesResponse interfaces.RatesResponse
+	if err := json.Unmarshal(bytes, &ratesResponse); err != nil {
+		return interfaces.RatesResponse{}, err
+	}
+
+	return ratesResponse, nil
+}
+
+func NewGenericSource(url string) *GenericSource {
+	return &GenericSource{URL: url}
+}
+
+// Struct that represents Fixer source
+type FixerSource struct {
+	APIKey string
+}
+
+// Send request to Fixer and parse response to RatesResponse
+func (s *FixerSource) Fetch() (interfaces.RatesResponse, error) {
+	query := fmt.Sprintf("access_key=%s&symbols=EUR,USD,PLN,GTQ", s.APIKey)
+	url := fmt.Sprintf("https://data.fixer.io/api/latest?%s", query)
+
+	resp, err := sendRequest(url)
 
 	if err != nil {
 		return interfaces.RatesResponse{}, err

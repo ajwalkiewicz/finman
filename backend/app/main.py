@@ -3,9 +3,10 @@ import os
 from contextlib import asynccontextmanager
 from datetime import timedelta
 
+import redis as pyredis
 import redis.asyncio as redis
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_limiter import FastAPILimiter
@@ -14,6 +15,18 @@ from sqlalchemy.orm import Session
 
 from . import auth, crud, database, schemas
 from .password_validator import PasswordValidationError, PasswordValidator
+
+
+class ModifiedRateLimiter(RateLimiter):
+    async def __call__(self, request: Request, response: Response):
+        try:
+            await super().__call__(request, response)
+        except pyredis.ConnectionError:
+            logging.error("Redis connection error")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Rate limiting service is unavailable",
+            )
 
 
 # Lifespan event to create database and tables
@@ -53,7 +66,7 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
     dependencies=[
-        Depends(RateLimiter(times=100, seconds=60))
+        Depends(ModifiedRateLimiter(times=100, seconds=60))
     ],  # Rate limit: 100 requests per minute
 )
 

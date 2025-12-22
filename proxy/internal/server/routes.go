@@ -13,6 +13,7 @@ import (
 	"github.com/rs/cors"
 )
 
+// RegisterRoutes sets up the HTTP routes and their corresponding handlers
 func (s *ServerService) RegisterRoutes() http.Handler {
 	// Create new mux and register handlers
 	mux := http.NewServeMux()
@@ -52,6 +53,7 @@ func (s *ServerService) RegisterRoutes() http.Handler {
 	return newHandler.Handler(mux)
 }
 
+// Handler for /health endpoint
 func (s *ServerService) GetHealth() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Received request: %s %s\n", r.Method, r.URL.Path)
@@ -71,6 +73,7 @@ func (s *ServerService) GetHealth() http.HandlerFunc {
 	}
 }
 
+// Handler for /api/rates endpoint
 func (s *ServerService) GetRates() http.HandlerFunc {
 	FileSource := NewFileSource(s.Config.RatesFile)
 	FixerSource := NewFixerSource(s.Config.FixerAPIKey)
@@ -93,25 +96,31 @@ func (s *ServerService) GetRates() http.HandlerFunc {
 	DefaultSource := NewDefaultSource(DefaultRatesResponse)
 
 	var RatesSource RatesFetcher
-	var RatesHandler func(RatesFetcher, interfaces.RatesResponse) (interfaces.RatesResponse, error)
+	var RatesHandler func(RatesFetcher, *interfaces.RatesResponse) (*interfaces.RatesResponse, error)
 
-	if s.Config.UseDefaultRates {
-		log.Println("Using default rates as rates source")
+	switch s.Config.RatesSource {
+	case "file":
+		log.Println("Using file as rates source (default rates)")
 		RatesSource = DefaultSource
 		RatesHandler = s.handleDefaultRates
-	} else {
+	case "fixer":
 		log.Println("Using Fixer API as rates source")
 		RatesSource = FixerSource
+		RatesHandler = s.handleAPIRates
+	case "external":
+		log.Println("Using external URL as rates source")
+		GenericSource := NewGenericSource(s.Config.ExternalRatesURL)
+		RatesSource = GenericSource
 		RatesHandler = s.handleAPIRates
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Received request: %s %s\n", r.Method, r.URL.Path)
 
-		var response interfaces.RatesResponse
+		var response *interfaces.RatesResponse
 		var err error
 
-		response, err = RatesHandler(RatesSource, DefaultRatesResponse)
+		response, err = RatesHandler(RatesSource, &DefaultRatesResponse)
 
 		if err != nil {
 			log.Printf("Error handling rates request: %v", err)
@@ -145,7 +154,7 @@ func (s *ServerService) GetRates() http.HandlerFunc {
 // Helper function to handle API rates (both fresh and cached)
 // It tries to get rates from cache first, if not found, fetches from API
 // and if that fails, falls back to default rates.
-func (s *ServerService) handleAPIRates(rf RatesFetcher, dr interfaces.RatesResponse) (interfaces.RatesResponse, error) {
+func (s *ServerService) handleAPIRates(rf RatesFetcher, dr *interfaces.RatesResponse) (*interfaces.RatesResponse, error) {
 	todayKey := database.GetCacheKey()
 
 	// Check cache first
@@ -167,34 +176,37 @@ func (s *ServerService) handleAPIRates(rf RatesFetcher, dr interfaces.RatesRespo
 		// Save original EUR-based response to cache
 		cachedData, err := response.Marshal()
 		if err != nil {
-			return response, fmt.Errorf("failed to marshal rates for cache: %v", err)
+			return &response, fmt.Errorf("failed to marshal rates for cache: %v", err)
 		}
 		s.Database.Set(todayKey, cachedData)
 	} else {
 		// Cache hit - unmarshal cached data
 		err = json.Unmarshal([]byte(cached), &response)
 		if err != nil {
-			return response, fmt.Errorf("failed to unmarshal cached rates: %v", err)
+			return &response, fmt.Errorf("failed to unmarshal cached rates: %v", err)
 		}
 	}
 
-	return response, nil
+	return &response, nil
 }
 
-func (s *ServerService) handleDefaultRates(rf RatesFetcher, dr interfaces.RatesResponse) (interfaces.RatesResponse, error) {
+// Helper function to handle default rates
+func (s *ServerService) handleDefaultRates(rf RatesFetcher, dr *interfaces.RatesResponse) (*interfaces.RatesResponse, error) {
 	// Always return default rates
 	return dr, nil
 }
 
 // Helper function to recalculate rates based on requested base currency.
-func RecalculateRates(rr interfaces.RatesResponse, base string) (interfaces.RatesResponse, error) {
+// If base is "EUR", no recalculation is needed
+// (this is because rates are always provided with EUR as base).
+func RecalculateRates(rr *interfaces.RatesResponse, base string) (*interfaces.RatesResponse, error) {
 	var convertedRates interfaces.Rates
 	var err error
 
 	if base != "EUR" {
 		convertedRates, err = rates.ConvertRates(&rr.Rates, base)
 		if err != nil {
-			return interfaces.RatesResponse{}, fmt.Errorf("failed to convert rates: %v", err)
+			return nil, fmt.Errorf("failed to convert rates: %v", err)
 		}
 		rr.Rates = convertedRates
 		rr.Base = base

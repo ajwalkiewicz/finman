@@ -41,7 +41,12 @@
     "stackoverflow",
     // Project specific words
     "sessionmaker",
-    "autoflush"
+    "autoflush",
+    // Go
+    "joho",
+    "godotenv",
+    "htmx",
+    "maxmemory"
   ],
   "cSpell.ignorePaths": [
         ".vscode",
@@ -62,5 +67,6 @@
     }
   },
   "makefile.configureOnOpen": false,
-  "terminal.integrated.fontSize": 16
+  "terminal.integrated.fontSize": 16,
+  "editor.rulers": [79, 88, 120]
 }

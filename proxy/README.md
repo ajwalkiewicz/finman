@@ -1,8 +1,8 @@
 # Exchange Rates Proxy Service
 
-A high-performance Go-based proxy service that provides real-time currency 
-exchange rates with Redis caching. This service acts as a middleware between 
-the FinMan application and the Fixer.io API, offering improved performance 
+A high-performance Go-based proxy service that provides real-time currency
+exchange rates with Redis caching. This service acts as a middleware between
+the FinMan application and the Fixer.io API, offering improved performance
 and reliability.
 
 ## Features
@@ -149,16 +149,16 @@ flowchart TD
     FW --> PS
     PS --> FI
     PS --> RC
-    PS --> FW 
-    FI --> PS 
-    RC --> PS 
+    PS --> FW
+    FI --> PS
+    RC --> PS
 ```
 
 ## Caching Strategy
 
 - **Cache Key**: `exchange_rates_YYYY-MM-DD`
 - **Cache Duration**: 24 hours
-- **Cache Behavior**: 
+- **Cache Behavior**:
   - First request of the day fetches from Fixer.io API
   - Subsequent requests serve from Redis cache
   - Cache automatically expires at midnight
@@ -224,6 +224,15 @@ curl "http://localhost:8012/api/rates?base=USD"
 2. Ensure all tests pass
 3. Update documentation for new features
 4. Test with both live API and fallback modes
+
+## Notes
+
+Reduced docker image sized:
+Python:
+- mmtt-proxy                   latest      535099cd3767   4 weeks ago    321MB
+
+Go:
+- finman-proxy                 latest      96fdb8337ac0   9 days ago     10.7MB
 
 ## License
 

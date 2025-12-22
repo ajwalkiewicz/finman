@@ -24,13 +24,13 @@ type HealthResponse struct {
 }
 
 // Marshal method for HealthResponse
-func (r *HealthResponse) Marshal() ([]byte, error) {
-	out, err := json.Marshal(r)
+func (hr *HealthResponse) Marshal() ([]byte, error) {
+	out, err := json.Marshal(hr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal health response: %v", err)
 	}
 
-	log.Printf("Response: %+v", r)
+	log.Printf("Response: %+v", hr)
 	return out, nil
 }
 
@@ -43,12 +43,12 @@ type RatesResponse struct {
 }
 
 // Marshal method for RatesResponse
-func (r *RatesResponse) Marshal() ([]byte, error) {
-	out, err := json.Marshal(r)
+func (rr *RatesResponse) Marshal() ([]byte, error) {
+	out, err := json.Marshal(rr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal rates response: %v", err)
 	}
 
-	log.Printf("Response: %+v", r)
+	log.Printf("Response: %+v", rr)
 	return out, nil
 }
