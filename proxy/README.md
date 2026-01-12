@@ -110,7 +110,7 @@ The service uses environment variables for configuration. Create a `.env` file i
 
 5. **Run the service:**
    ```bash
-   go run ./cmd/api/main.go
+   go run ./cmd/api/main.go server
    ```
 
 The service will start on `http://localhost:8012`
