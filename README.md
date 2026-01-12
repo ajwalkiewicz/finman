@@ -172,7 +172,7 @@ frontend, and Go proxy server, featuring multi-currency support and detailed ana
 
 3. **Start proxy server**
    ```bash
-   go run ./cmd/api/main.go
+   go run ./cmd/api/main.go server
    ```
 
    🌐 Proxy available at: http://localhost:8012
