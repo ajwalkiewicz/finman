@@ -39,7 +39,7 @@ func isSourceValid(value string, validList []string) bool {
 }
 
 // Load loads configuration from environment variables or .env file
-func Load() *Config {
+func Load() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Printf("No .env file found or error loading it: %v", err)
@@ -68,6 +68,17 @@ func Load() *Config {
 		ratesSource = FileSource
 	}
 
+	if ratesFile == "" {
+		ratesFile = DefaultRatesFile
+	}
+
+	// Validate rates file exists when using file source
+	if ratesSource == FileSource {
+		if _, err := os.Stat(ratesFile); err != nil {
+			return nil, fmt.Errorf("configuration error: rates file '%s' does not exist or is not accessible: %w", ratesFile, err)
+		}
+	}
+
 	config := &Config{
 		ProxyPort:        proxyPort,
 		RedisHost:        redisHost,
@@ -80,7 +91,7 @@ func Load() *Config {
 
 	log.Println(config.Log())
 
-	return config
+	return config, nil
 }
 
 func (c *Config) Log() string {

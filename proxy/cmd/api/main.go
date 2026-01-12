@@ -11,7 +11,11 @@ import (
 
 // StartServer initializes and starts the HTTP server
 func StartServer() {
-	config := config.Load()
+	config, err := config.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to load configuration: %v\n", err)
+		os.Exit(1)
+	}
 	ServerService := server.New(config)
 	ServerService.Start()
 }
@@ -20,7 +24,11 @@ func StartServer() {
 // endpoint of the running server.
 // Used in Docker "healthcheck".
 func HealthCheck() {
-	config := config.Load()
+	config, err := config.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to load configuration: %v\n", err)
+		os.Exit(2)
+	}
 
 	url := fmt.Sprintf("http://127.0.0.1:%s/health", config.ProxyPort)
 	if _, err := http.Get(url); err != nil {
