@@ -123,7 +123,7 @@ func (s *FileSource) Fetch() (interfaces.RatesResponse, error) {
 		return interfaces.RatesResponse{}, fmt.Errorf("failed to open '%s' file: %w", s.Path, err)
 	}
 
-	// Something like "final" in Python
+	// Ensures file is closed after function completes (similar to Python's context manager cleanup)
 	defer file.Close()
 
 	// Read file contents
