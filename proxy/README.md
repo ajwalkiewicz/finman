@@ -181,11 +181,15 @@ The service is configured to accept requests from:
 
 ## Performance
 
-- **Response Time**: < 10ms for cached requests
-- **Throughput**: Handles 1000+ requests/second
-- **Memory Usage**: ~10MB base footprint
-- **API Efficiency**: Reduces Fixer.io calls by ~99% with caching
+Actual performance will depend on your deployment environment (hardware,
+network, Redis configuration, and workload). The service is designed to:
 
+- **Leverage Caching**: Serve repeated requests from Redis to minimize calls to Fixer.io
+- **Optimize Latency**: Keep response times low, especially for cached requests
+- **Reduce External API Usage**: Significantly cut down the number of outbound API calls
+
+For concrete numbers, run benchmarks in your own environment using tools such as
+`wrk`, `ab`, or `hey`, and monitor Redis and application metrics.
 ## Monitoring
 
 Monitor the service using:
