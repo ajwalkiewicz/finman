@@ -68,6 +68,17 @@ func Load() *Config {
 		ratesSource = FileSource
 	}
 
+	if ratesFile == "" {
+		ratesFile = DefaultRatesFile
+	}
+
+	// Validate rates file exists when using file source
+	if ratesSource == FileSource {
+		if _, err := os.Stat(ratesFile); err != nil {
+			log.Fatalf("Configuration error: rates file '%s' does not exist or is not accessible: %v", ratesFile, err)
+		}
+	}
+
 	config := &Config{
 		ProxyPort:        proxyPort,
 		RedisHost:        redisHost,
