@@ -34,18 +34,22 @@ func New(redisHost, redisPort string) (*DBService, error) {
 	ctx := context.Background()
 
 	attempts := 3
-	sleep := 2 * time.Second
+	baseSleep := 2 * time.Second
 	var redisStatus bool
 
-	for attempt := range attempts {
+	for attempt := 0; attempt < attempts; attempt++ {
 		redisStatus = client.Ping(ctx).Err() == nil
 
 		if redisStatus {
 			break
 		}
 
-		log.Printf("[Attempt %d/%d] Redis connection failed, retrying in %s...", attempt+1, attempts, sleep)
-		time.Sleep(sleep)
+		// Apply exponential backoff between retries to reduce load on Redis.
+		if attempt < attempts-1 {
+			sleep := baseSleep * time.Duration(1<<attempt)
+			log.Printf("[Attempt %d/%d] Redis connection failed, retrying in %s...", attempt+1, attempts, sleep)
+			time.Sleep(sleep)
+		}
 	}
 
 	if !redisStatus {
