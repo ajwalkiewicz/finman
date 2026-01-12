@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-type Rates map[string]float32
+type Rates map[string]float64
 
 type Service interface {
 	Health() HealthResponse
