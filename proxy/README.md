@@ -231,7 +231,7 @@ curl "http://localhost:8012/api/rates?base=USD"
 
 ## Notes
 
-Reduced docker image sized:
+Reduced Docker image sizes:
 Python:
 - mmtt-proxy                   latest      535099cd3767   4 weeks ago    321MB
 
