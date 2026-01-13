@@ -63,7 +63,7 @@ func New(redisHost, redisPort string) (*DBService, error) {
 
 // Health returns the health status and statistics of the Redis server.
 func (s *DBService) Health() interfaces.HealthResponse {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // Default is now 5s
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	redisStatus := s.Service.Ping(ctx).Err() == nil
@@ -81,6 +81,8 @@ func (s *DBService) Close() error {
 }
 
 // Shutdown gracefully shuts down the Redis client connection.
+// Warning: Using Shutdown command will stop the Redis server itself.
+// In shared or containerized setups, this may not be desired.
 func (s *DBService) Shutdown(ctx context.Context) error {
 	cmd := s.Service.Shutdown(ctx)
 	return cmd.Err()

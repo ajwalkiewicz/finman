@@ -22,7 +22,7 @@ class ModifiedRateLimiter(RateLimiter):
         try:
             await super().__call__(request, response)
         except pyredis.ConnectionError:
-            logging.error("Redis connection error")
+            logging.exception("Redis connection error")
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Rate limiting service is unavailable",

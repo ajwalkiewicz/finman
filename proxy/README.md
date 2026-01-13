@@ -190,6 +190,7 @@ network, Redis configuration, and workload). The service is designed to:
 
 For concrete numbers, run benchmarks in your own environment using tools such as
 `wrk`, `ab`, or `hey`, and monitor Redis and application metrics.
+
 ## Monitoring
 
 Monitor the service using:
