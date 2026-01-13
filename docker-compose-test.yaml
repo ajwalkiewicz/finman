@@ -1,4 +1,4 @@
-# Docker Compose configuration for production environment
+# Docker Compose configuration for testing environment
 services:
   backend:
     build: ./backend
@@ -59,6 +59,7 @@ services:
     environment:
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
+      - EXTERNAL_RATES_URL=http://test-server:8013
     depends_on:
       - redis
     volumes:
@@ -70,6 +71,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+# Use only for testing
+  test-server:
+    build: ./proxy/utils
+    ports:
+      - "8013:8013"
+    networks:
+      - dev-net
 
 networks:
   dev-net:
