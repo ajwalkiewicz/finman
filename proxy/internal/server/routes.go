@@ -69,21 +69,24 @@ func (s *ServerService) GetHealth() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(out)
+		if _, err := w.Write(out); err != nil {
+			log.Printf("Failed to write health response: %v", err)
+		}
+
 	}
 }
 
 // Handler for /api/rates endpoint
 func (s *ServerService) GetRates() http.HandlerFunc {
-	FileSource := NewFileSource(s.Config.RatesFile)
-	FixerSource := NewFixerSource(s.Config.FixerAPIKey)
+	fileSource := NewFileSource(s.Config.RatesFile)
+	fixerSource := NewFixerSource(s.Config.FixerAPIKey)
 
 	// Load default rates from file.
 	// This will be used if API fetching fails or if configured to use default rates.
-	DefaultRatesResponse, err := FileSource.Fetch()
-	if err != nil || !DefaultRatesResponse.Success {
+	defaultRatesResponse, err := fileSource.Fetch()
+	if err != nil || !defaultRatesResponse.Success {
 		log.Println("Failed to load default rates from file")
-		DefaultRatesResponse = interfaces.RatesResponse{
+		defaultRatesResponse = interfaces.RatesResponse{
 			Rates: interfaces.Rates{
 				"EUR": 1.0000,
 				"USD": 1.1000,
@@ -93,25 +96,25 @@ func (s *ServerService) GetRates() http.HandlerFunc {
 		}
 	}
 
-	DefaultSource := NewDefaultSource(DefaultRatesResponse)
+	defaultSource := NewDefaultSource(defaultRatesResponse)
 
-	var RatesSource RatesFetcher
-	var RatesHandler func(RatesFetcher, *interfaces.RatesResponse) (*interfaces.RatesResponse, error)
+	var ratesFetcher RatesFetcher
+	var ratesHandler func(RatesFetcher, *interfaces.RatesResponse) (*interfaces.RatesResponse, error)
 
 	switch s.Config.RatesSource {
 	case "file":
 		log.Println("Using file as rates source (default rates)")
-		RatesSource = DefaultSource
-		RatesHandler = s.handleDefaultRates
+		ratesFetcher = defaultSource
+		ratesHandler = s.handleDefaultRates
 	case "fixer":
 		log.Println("Using Fixer API as rates source")
-		RatesSource = FixerSource
-		RatesHandler = s.handleAPIRates
+		ratesFetcher = fixerSource
+		ratesHandler = s.handleAPIRates
 	case "external":
 		log.Println("Using external URL as rates source")
-		GenericSource := NewGenericSource(s.Config.ExternalRatesURL)
-		RatesSource = GenericSource
-		RatesHandler = s.handleAPIRates
+		genericSource := NewGenericSource(s.Config.ExternalRatesURL)
+		ratesFetcher = genericSource
+		ratesHandler = s.handleAPIRates
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +123,7 @@ func (s *ServerService) GetRates() http.HandlerFunc {
 		var response *interfaces.RatesResponse
 		var err error
 
-		response, err = RatesHandler(RatesSource, &DefaultRatesResponse)
+		response, err = ratesHandler(ratesFetcher, &defaultRatesResponse)
 
 		if err != nil {
 			log.Printf("Error handling rates request: %v", err)
@@ -147,7 +150,9 @@ func (s *ServerService) GetRates() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(out)
+		if _, err := w.Write(out); err != nil {
+			log.Printf("Failed to write health response: %v", err)
+		}
 	}
 }
 
@@ -170,7 +175,7 @@ func (s *ServerService) handleAPIRates(rf RatesFetcher, dr *interfaces.RatesResp
 		if err != nil {
 			log.Printf("Error fetching rates from API: %v", err)
 			// Fallback to default rates if API fetch fails
-			return dr, fmt.Errorf("failed to fetch rates from Fixer API: %v", err)
+			return dr, fmt.Errorf("failed to fetch rates from rates provider: %v", err)
 		}
 
 		// Save original EUR-based response to cache

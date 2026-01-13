@@ -23,7 +23,7 @@ VALID_RESPONSE = {
     "success": True,
 }
 
-MAL_RESPONSE = {
+MALICIOUS_RESPONSE = {
     "alert(1)": 1761808694,
     "base": "alert(1)",
     "date": "alert(1)",

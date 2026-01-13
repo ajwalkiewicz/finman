@@ -34,7 +34,7 @@ func New(redisHost, redisPort string) (*DBService, error) {
 	ctx := context.Background()
 
 	attempts := 3
-	sleep := 2 * time.Second
+	sleep := 1 * time.Second
 	var redisStatus bool
 
 	for attempt := range attempts {
@@ -45,6 +45,8 @@ func New(redisHost, redisPort string) (*DBService, error) {
 		}
 
 		log.Printf("[Attempt %d/%d] Redis connection failed, retrying in %s...", attempt+1, attempts, sleep)
+
+		sleep *= 2
 		time.Sleep(sleep)
 	}
 

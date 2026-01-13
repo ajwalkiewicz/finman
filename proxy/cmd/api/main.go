@@ -12,8 +12,8 @@ import (
 // StartServer initializes and starts the HTTP server
 func StartServer() {
 	config := config.Load()
-	ServerService := server.New(config)
-	ServerService.Start()
+	serverService := server.New(config)
+	serverService.Start()
 }
 
 // HealthCheck performs a health check by sending a request to the /health

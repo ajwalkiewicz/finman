@@ -19,13 +19,14 @@ func sendRequest(url string) (*http.Response, error) {
 	var err error
 
 	attempts := 3
-	sleep := 2 * time.Second
+	sleep := 1 * time.Second
 	for attempt := range attempts {
 		resp, err = http.Get(url)
 		if err == nil {
 			break
 		}
 		log.Printf("Attempt %d: Error sending request to %s: %v", attempt+1, url, err)
+		sleep *= 2
 		time.Sleep(sleep)
 	}
 
@@ -122,8 +123,6 @@ func (s *FileSource) Fetch() (interfaces.RatesResponse, error) {
 	if err != nil {
 		return interfaces.RatesResponse{}, fmt.Errorf("failed to open '%s' file: %w", s.Path, err)
 	}
-
-	// Ensures file is closed after function completes (similar to Python's context manager cleanup)
 	defer file.Close()
 
 	// Read file contents

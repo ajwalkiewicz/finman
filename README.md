@@ -1,6 +1,6 @@
 # Finance Manager
 
-A comprehensive finance management application for tracking cyclic transactions, 
+A comprehensive finance management application for tracking cyclic transactions,
 expenses, and money flow between accounts. Built with FastAPI backend, Vue 3
 frontend, and Go proxy server, featuring multi-currency support and detailed analytics.
 
@@ -153,14 +153,14 @@ frontend, and Go proxy server, featuring multi-currency support and detailed ana
    ```
 
 2. **Install dependencies**
-   - **GO** follow official instructions at https://go.dev/doc/install
+   - **Go** follow official instructions at https://go.dev/doc/install
    - **Redis**:
    ```bash
    sudo apt update
    sudo apt install redis-server
    sudo systemctl start redis-server
    ```
-   
+
    > **WARNING**
    >
    > Remember about disabling Redis service when switching to docker setup
@@ -186,7 +186,7 @@ fetching current currencies rates.
 
 > ⚠️ **WARNING**
 >
-> Store all environmental variables in `.env.` file to avoid accidentally 
+> Store all environmental variables in `.env.` file to avoid accidentally
 > publishing them
 
 #### Secret Key
@@ -319,7 +319,7 @@ Application can import CSV data from the file. CSV must follow below format:
 
 ### 💡 Transaction Types
 - **💸 Expenses**: Transactions without a destination account
-- **💰 Income**: Transactions without an origin account  
+- **💰 Income**: Transactions without an origin account
 - **🔄 Transfers**: Transactions with both origin and destination accounts (not counted as expenses)
 
 ### 🌍 Supported Currencies
@@ -339,7 +339,7 @@ Application can import CSV data from the file. CSV must follow below format:
 
 ### User Types
 - **🆓 Free**: Basic transaction tracking
-- **➕ Plus**: Enhanced analytics and features  
+- **➕ Plus**: Enhanced analytics and features
 - **🏆 Pro**: Full feature access with advanced analytics
 
 ## 🔧 Development
@@ -440,7 +440,7 @@ We welcome contributions! Please feel free to submit issues, feature requests, o
 
 ## 📄 License
 
-Licensed under the GNU General Public License v3.0 — see [LICENSE](./LICENSE) 
+Licensed under the GNU General Public License v3.0 — see [LICENSE](./LICENSE)
 for details.
 
 Copyright (c) 2025 Adam Walkiewicz
