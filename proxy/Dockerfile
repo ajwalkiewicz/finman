@@ -16,8 +16,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o proxy ./cmd/api/main.go
 # Stage 2: Create minimal image with Alpine for CA certificates and healthcheck support
 FROM alpine:latest AS support
 
-# Install ca-certificates for SSL/TLS connections and wget for health checks
-RUN apk --no-cache add ca-certificates 
+# Install ca-certificates for SSL/TLS connections for health checks
+RUN apk --no-cache add ca-certificates
 
 # Create a non-root user for security
 RUN addgroup -S mygroup && adduser -D -u 1000 -S nonroot -G mygroup
